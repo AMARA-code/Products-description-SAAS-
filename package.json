@@ -1,0 +1,19 @@
+{
+  "name": "describeflow-saas",
+  "private": true,
+  "dependencies": {
+    "framer-motion": "^11.15.0"
+  },
+  "workspaces": [
+    "web",
+    "mobile"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=web",
+    "dev:web": "npm run dev --workspace=web",
+    "dev:mobile": "npm run start --workspace=mobile",
+    "build": "npm run build --workspace=web",
+    "build:web": "npm run build --workspace=web",
+    "lint": "npm run lint --workspace=web"
+  }
+}

@@ -1,0 +1,2 @@
+# local env (do not commit secrets)
+.env.local
