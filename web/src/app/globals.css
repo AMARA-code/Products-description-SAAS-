@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f7f7ff;
+  --foreground: #20163a;
+  --muted: #645b88;
+  --card: rgba(255, 255, 255, 0.88);
+  --card-border: rgba(127, 102, 255, 0.24);
+  --accent: #7b61ff;
+  --accent-soft: rgba(123, 97, 255, 0.18);
+  --ring: rgba(56, 189, 248, 0.45);
+  --danger: #d14366;
+  --success: #12926b;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--foreground);
+  background:
+    radial-gradient(960px 600px at 8% -10%, rgba(139, 92, 246, 0.22), transparent 62%),
+    radial-gradient(860px 520px at 95% 2%, rgba(56, 189, 248, 0.2), transparent 58%),
+    radial-gradient(760px 460px at 72% 100%, rgba(244, 114, 182, 0.18), transparent 56%),
+    var(--background);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  opacity: 0.06;
+  background-image:
+    url("/illustrations/hero.svg");
+  background-size: 920px;
+  background-position:
+    left -140px top -90px;
+  background-repeat: no-repeat;
+  filter: saturate(0.95) contrast(1);
+  pointer-events: none;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(128deg, rgba(139, 92, 246, 0.07), rgba(56, 189, 248, 0.08) 40%, rgba(244, 114, 182, 0.06)),
+    repeating-linear-gradient(
+      90deg,
+      rgba(123, 97, 255, 0.04) 0,
+      rgba(123, 97, 255, 0.04) 1px,
+      transparent 1px,
+      transparent 40px
+    );
+}
+
+::selection {
+  background: rgba(123, 97, 255, 0.25);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #6d6496;
+  opacity: 0.95;
+  font-weight: 500;
+}
+
+input,
+textarea {
+  border-color: rgba(123, 97, 255, 0.26) !important;
+  transition: border-color 220ms ease, box-shadow 220ms ease, background-color 220ms ease;
+}
+
+input:focus::placeholder,
+textarea:focus::placeholder {
+  color: #7b61ff;
+}
+
+input:placeholder-shown,
+textarea:placeholder-shown {
+  box-shadow: inset 0 0 0 1px rgba(123, 97, 255, 0.2);
+}
+
+@layer utilities {
+  .glass {
+    @apply border backdrop-blur-xl;
+    border-color: var(--card-border);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(252, 248, 255, 0.84));
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+}

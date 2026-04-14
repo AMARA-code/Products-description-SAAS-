@@ -1,2 +1,42 @@
-# local env (do not commit secrets)
+# dependencies
+node_modules/
+**/node_modules/
+
+# build outputs
+.next/
+**/.next/
+dist/
+build/
+out/
+
+# environment files
+.env
 .env.local
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+
+# project scope
+mobile/
+# dependencies
+node_modules/
+**/node_modules/
+
+# env
+.env
+.env.local
+
+# next
+.next/
+out/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+
+node_modules/
+.next/
+dist/
+build/
+.env
