@@ -6,7 +6,9 @@ import { loadEnvConfig } from "@next/env";
 loadEnvConfig(path.resolve(process.cwd(), ".."), process.env.NODE_ENV !== "production");
 
 const nextConfig: NextConfig = {
-  devIndicators: false,
+  devIndicators: {
+    buildActivity: false,
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "15mb",

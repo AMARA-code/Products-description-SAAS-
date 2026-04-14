@@ -27,12 +27,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       md: "h-11 px-4 text-sm",
       lg: "h-12 px-6 text-base",
     };
+    const variantKey = variant as keyof typeof variants;
+    const sizeKey = size as keyof typeof sizes;
+
     return (
       <motion.button
         ref={ref}
         whileTap={{ scale: 0.97 }}
         whileHover={{ y: -2 }}
-        className={cn(base, variants[variant], sizes[size], className)}
+        className={cn(base, variants[variantKey], sizes[sizeKey], className)}
         {...props}
       />
     );
