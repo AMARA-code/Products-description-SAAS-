@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Describeflow — AI product descriptions",
   description:
-    "Generate production-ready product copy from an image or a few fields. Plans, usage limits, and PayFast billing built in.",
+    "Create high-converting product descriptions in seconds from product details or images.",
   metadataBase: new URL("https://describeflow.app"),
   applicationName: "Describeflow",
   keywords: [
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     "ecommerce copywriting",
     "AI writing tool",
     "product copy generator",
-    "SaaS automation",
+    "description generator",
   ],
   alternates: {
     canonical: "/",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Describeflow — AI product descriptions",
     description:
-      "Generate production-ready product copy from an image or a few fields. Plans, usage limits, and PayFast billing built in.",
+      "Create high-converting product descriptions in seconds from product details or images.",
     url: "/",
     siteName: "Describeflow",
     type: "website",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Describeflow — AI product descriptions",
     description:
-      "Generate production-ready product copy from an image or a few fields. Plans, usage limits, and PayFast billing built in.",
+      "Create high-converting product descriptions in seconds from product details or images.",
     images: ["/illustrations/hero.svg"],
   },
   robots: {

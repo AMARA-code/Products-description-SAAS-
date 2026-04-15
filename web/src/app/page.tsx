@@ -8,26 +8,26 @@ import Link from "next/link";
 
 const features = [
   {
-    title: "Vision + language models",
-    body: "Upload a hero image or enter structured fields — tuned prompts return ready-to-ship copy.",
+    title: "Image + prompt generation",
+    body: "Upload a product image or add key details, and get ready-to-use descriptions in seconds.",
     icon: ImageIcon,
   },
   {
-    title: "Usage you can trust",
-    body: "Monthly quotas, automatic resets, and guardrails when limits are hit — upgrade in one click.",
+    title: "Fast output for every launch",
+    body: "Generate multiple variants instantly for marketplaces, product pages, ads, and social posts.",
     icon: Zap,
   },
   {
-    title: "Ops-ready billing",
-    body: "PayFast subscriptions with webhook enforcement synced to your Supabase profile.",
+    title: "Consistent brand voice",
+    body: "Keep your tone clear and on-brand across your full catalog without rewriting manually.",
     icon: Sparkles,
   },
 ];
 
 const stats = [
-  { value: "3.5x", label: "faster launch cycle" },
-  { value: "42%", label: "higher conversion copy" },
-  { value: "99.9%", label: "team uptime confidence" },
+  { value: "< 10s", label: "average description generation" },
+  { value: "3x", label: "faster product listing workflow" },
+  { value: "24/7", label: "instant copy creation" },
 ];
 
 const steps = [
@@ -139,10 +139,10 @@ export default function HomePage() {
           <div className="text-sm font-semibold tracking-tight">Describeflow</div>
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <Link href="/pricing" className="text-muted transition hover:text-foreground">
+          <Link href="/pricing" className="hidden text-muted transition hover:text-foreground sm:inline-flex">
             Pricing
           </Link>
-          <Link href="/login">
+          <Link href="/login" className="hidden sm:inline-flex">
             <Button variant="ghost" size="sm">
               Sign in
             </Button>
@@ -163,7 +163,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-white/85 px-3 py-1 text-xs text-muted"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500" />
-              Trusted by modern eCommerce and DTC teams
+              Trusted by ecommerce brands and sellers
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: 12 }}
@@ -171,9 +171,9 @@ export default function HomePage() {
               transition={{ delay: 0.05, duration: 0.55 }}
               className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl"
             >
-              Build your next AI growth engine like a{" "}
+              Generate high-converting{" "}
               <span className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">
-                real SaaS
+                product descriptions in seconds
               </span>
               .
             </motion.h1>
@@ -183,8 +183,8 @@ export default function HomePage() {
               transition={{ delay: 0.1, duration: 0.55 }}
               className="max-w-xl text-pretty text-base text-muted sm:text-lg"
             >
-              Describeflow turns your product inputs into conversion-focused copy, team workflows,
-              and analytics-ready output with enterprise-grade auth, billing, and usage control.
+              Describeflow turns your product name, features, and images into clear, persuasive
+              product copy you can publish right away.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -227,8 +227,8 @@ export default function HomePage() {
             </motion.div>
             <div className="grid gap-3 sm:grid-cols-2">
               {[
-                { title: "Live SEO score", value: "92/100", tone: "from-violet-100 to-fuchsia-200/80" },
-                { title: "Campaign velocity", value: "2.4x", tone: "from-white to-cyan-200/60" },
+                { title: "Descriptions generated", value: "50K+", tone: "from-violet-100 to-fuchsia-200/80" },
+                { title: "Average time saved", value: "12 hrs/week", tone: "from-white to-cyan-200/60" },
               ].map((card, idx) => (
                 <motion.div
                   key={card.title}
@@ -270,10 +270,10 @@ export default function HomePage() {
                 viewport={{ once: true, amount: 0.2 }}
               >
                 {[
-                  { src: "/images/hero-product-1.svg", title: "Automated Product Copy", tone: "from-violet-100/70 to-white" },
-                  { src: "/images/hero-product-2.svg", title: "Brand Voice Variants", tone: "from-fuchsia-200/45 to-white" },
-                  { src: "/images/hero-product-3.svg", title: "Campaign-ready Exports", tone: "from-cyan-200/40 to-white" },
-                  { src: "/illustrations/hero.svg", title: "AI Workflow Canvas", tone: "from-violet-100/70 to-fuchsia-100/40" },
+                  { src: "/images/hero-product-1.svg", title: "One-click product copy", tone: "from-violet-100/70 to-white" },
+                  { src: "/images/hero-product-2.svg", title: "Tone and style options", tone: "from-fuchsia-200/45 to-white" },
+                  { src: "/images/hero-product-3.svg", title: "Store-ready descriptions", tone: "from-cyan-200/40 to-white" },
+                  { src: "/illustrations/hero.svg", title: "Fast writing workflow", tone: "from-violet-100/70 to-fuchsia-100/40" },
                 ].map((item, idx) => (
                   <motion.div
                     key={item.title}
@@ -360,11 +360,11 @@ export default function HomePage() {
         <section className="mt-24 grid gap-8 rounded-3xl border border-violet-500/20 bg-white/90 p-8 lg:grid-cols-2 lg:items-center">
           <div className="space-y-4">
             <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-              Launch faster with a full-stack SaaS foundation
+              Write better product copy at scale
             </h2>
             <p className="max-w-xl text-muted">
-              Everything from account onboarding to billing logic is production-ready. Your team
-              focuses on growth, not glue code.
+              Stop writing descriptions manually. Generate polished copy for every product in your
+              catalog in just a few clicks.
             </p>
             <div className="space-y-3">
               {steps.map((step) => (
@@ -382,10 +382,11 @@ export default function HomePage() {
             transition={{ duration: 0.45 }}
             className="glass rounded-2xl border border-violet-500/20 p-6"
           >
-            <div className="text-xs uppercase tracking-wide text-muted">Ready to scale</div>
-            <div className="mt-3 text-2xl font-semibold">Set up in under 10 minutes</div>
+            <div className="text-xs uppercase tracking-wide text-muted">Start creating instantly</div>
+            <div className="mt-3 text-2xl font-semibold">Publish product descriptions in seconds</div>
             <p className="mt-2 text-sm text-muted">
-              Auth, usage metering, and PayFast subscriptions are already integrated and polished.
+              Add your product details, click generate, and copy your final description to your
+              store in one step.
             </p>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link href="/signup" className="w-full sm:w-auto">
