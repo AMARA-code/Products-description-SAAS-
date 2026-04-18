@@ -82,52 +82,38 @@ const showcaseGridVariants = {
 
 export default function HomePage() {
   const { scrollYProgress } = useScroll();
-  const heroDriftY = useTransform(scrollYProgress, [0, 0.5], [0, -28]);
-  const heroDriftX = useTransform(scrollYProgress, [0, 0.5], [0, 16]);
   const dashboardDriftY = useTransform(scrollYProgress, [0, 0.45], [0, -18]);
 
   return (
     <div className="relative overflow-hidden pb-20">
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute -left-20 top-20 -z-10 h-[24rem] w-[24rem] rounded-full bg-violet-500/60 blur-3xl"
-        animate={{ x: [0, 54, -42, 0], y: [0, -40, 26, 0], scale: [1, 1.22, 0.9, 1], opacity: [0.56, 0.95, 0.68, 0.56] }}
-        transition={{ duration: 6.6, repeat: Infinity, ease: "easeInOut" }}
+        className="pointer-events-none absolute -left-24 top-20 -z-10 h-[20rem] w-[30rem] rounded-[28%] bg-gradient-to-br from-violet-500/60 via-fuchsia-500/40 to-cyan-400/45 blur-3xl dark:from-violet-500/48 dark:via-fuchsia-500/40 dark:to-cyan-400/48"
+        animate={{ x: [0, 72, -56, 0], y: [0, -30, 22, 0], scale: [1, 1.14, 0.94, 1], rotate: [0, 7, -5, 0], opacity: [0.58, 0.96, 0.72, 0.58] }}
+        transition={{ duration: 8.2, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute right-8 top-32 -z-10 h-[22rem] w-[22rem] rounded-full bg-cyan-400/62 blur-3xl"
-        animate={{ x: [0, -52, 46, 0], y: [0, 38, -30, 0], scale: [1, 0.86, 1.2, 1], opacity: [0.52, 0.9, 0.64, 0.52] }}
-        transition={{ duration: 6.9, repeat: Infinity, ease: "easeInOut" }}
+        className="pointer-events-none absolute right-6 top-36 -z-10 h-[18rem] w-[31rem] rounded-[24%] bg-gradient-to-r from-cyan-400/60 via-sky-400/34 to-fuchsia-500/36 blur-3xl dark:from-cyan-400/44 dark:via-indigo-500/34 dark:to-fuchsia-500/42"
+        animate={{ x: [0, -70, 52, 0], y: [0, 26, -24, 0], scale: [1, 0.9, 1.08, 1], rotate: [0, -8, 6, 0], opacity: [0.54, 0.9, 0.66, 0.54] }}
+        transition={{ duration: 8.6, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute left-1/3 top-8 -z-10 h-[20rem] w-[20rem] rounded-full bg-fuchsia-500/56 blur-3xl"
-        animate={{ x: [0, 42, -44, 0], y: [0, 42, -30, 0], scale: [1, 1.18, 0.9, 1], opacity: [0.48, 0.86, 0.6, 0.48] }}
-        transition={{ duration: 6.1, repeat: Infinity, ease: "easeInOut" }}
+        className="pointer-events-none absolute left-[28%] top-6 -z-10 h-[18rem] w-[26rem] rounded-[34%] bg-gradient-to-br from-fuchsia-500/48 via-violet-500/34 to-cyan-400/34 blur-3xl dark:from-fuchsia-500/44 dark:via-violet-500/38 dark:to-cyan-400/34"
+        animate={{ x: [0, 56, -48, 0], y: [0, 30, -26, 0], scale: [1, 1.12, 0.9, 1], rotate: [0, 6, -6, 0], opacity: [0.5, 0.86, 0.62, 0.5] }}
+        transition={{ duration: 7.8, repeat: Infinity, ease: "easeInOut" }}
       />
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <motion.div style={{ y: heroDriftY, x: heroDriftX }} className="h-full w-full">
-          <Image
-            src="/images/hero-product-2.svg"
-            alt=""
-            fill
-            className="object-cover opacity-[0.07]"
-            sizes="100vw"
-            priority
-          />
-        </motion.div>
-      </div>
       <motion.div
-        className="pointer-events-none absolute -right-16 top-20 -z-10 h-72 w-72 overflow-hidden rounded-full border border-white/55"
-        animate={{ x: [0, -8, 6, 0], y: [0, -10, 0, 8, 0], rotate: [0, 2, 0, -2, 0], scale: [1, 1.02, 0.98, 1] }}
-        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+        className="pointer-events-none absolute -right-16 top-20 -z-10 h-64 w-80 overflow-hidden rounded-[24%] border border-white/55 dark:border-violet-300/20"
+        animate={{ x: [0, -14, 10, 0], y: [0, -12, 0, 12, 0], rotate: [0, 4, 0, -4, 0], scale: [1, 1.03, 0.97, 1] }}
+        transition={{ duration: 12.8, repeat: Infinity, ease: "easeInOut" }}
       >
         <Image
           src="/images/hero-product-3.svg"
           alt=""
           fill
-          className="object-cover opacity-20"
+          className="object-cover opacity-20 dark:opacity-35 dark:mix-blend-screen"
           sizes="288px"
         />
       </motion.div>
@@ -160,7 +146,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-white/85 px-3 py-1 text-xs text-muted"
+              className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-white/85 px-3 py-1 text-xs text-muted dark:border-violet-400/45 dark:bg-[#121732]/90 dark:text-violet-100"
             >
               <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500" />
               Trusted by ecommerce brands and sellers
@@ -238,7 +224,7 @@ export default function HomePage() {
                     y: { duration: 2.8 + idx * 0.35, repeat: Infinity, ease: "easeInOut" },
                     default: { type: "spring", stiffness: 260, damping: 16 },
                   }}
-                  className={`rounded-2xl border border-violet-500/20 bg-gradient-to-br ${card.tone} p-4 text-foreground shadow-card`}
+                  className={`rounded-2xl border border-violet-500/20 bg-gradient-to-br ${card.tone} p-4 text-foreground shadow-card dark:border-violet-400/35 dark:from-[#151b3d] dark:via-[#121732] dark:to-[#0f1330]`}
                 >
                   <p className="text-xs font-medium">{card.title}</p>
                   <p className="mt-1 text-2xl font-semibold">{card.value}</p>
@@ -255,12 +241,12 @@ export default function HomePage() {
             style={{ y: dashboardDriftY }}
           >
             <div className="glass absolute -inset-6 rounded-[32px] blur-2xl" />
-            <div className="relative glass overflow-visible rounded-[28px] p-6 shadow-[0_24px_70px_rgba(34,34,59,0.2)]">
+            <div className="relative glass overflow-visible rounded-[28px] p-6 shadow-[0_24px_70px_rgba(34,34,59,0.2)] dark:shadow-[0_30px_90px_rgba(2,7,30,0.72)]">
               <motion.div
                 aria-hidden
-                className="pointer-events-none absolute -left-8 -top-10 h-24 w-24 rounded-full bg-fuchsia-500/20 blur-2xl"
-                animate={{ x: [0, 22, -20, 0], y: [0, 24, -22, 0], scale: [1, 1.2, 0.9, 1], opacity: [0.55, 1, 0.7, 0.55] }}
-                transition={{ duration: 6.8, repeat: Infinity, ease: "easeInOut" }}
+                className="pointer-events-none absolute -left-10 -top-10 h-20 w-28 rounded-[30%] bg-gradient-to-br from-fuchsia-500/24 to-cyan-400/20 blur-2xl dark:from-fuchsia-500/35 dark:to-cyan-400/28"
+                animate={{ x: [0, 26, -20, 0], y: [0, 20, -18, 0], scale: [1, 1.18, 0.9, 1], rotate: [0, 8, -6, 0], opacity: [0.56, 1, 0.72, 0.56] }}
+                transition={{ duration: 7.3, repeat: Infinity, ease: "easeInOut" }}
               />
               <motion.div
                 className="relative mt-2 grid gap-4 sm:grid-cols-2"
@@ -314,7 +300,7 @@ export default function HomePage() {
                       },
                     }}
                     whileHover={{ y: -8, rotateX: 7, rotateY: idx % 2 === 0 ? -7 : 7, scale: 1.03 }}
-                    className={`group overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br ${item.tone} shadow-sm transition-all duration-300 hover:shadow-[0_16px_36px_rgba(123,97,255,0.2)]`}
+                    className={`group overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br ${item.tone} shadow-sm transition-all duration-300 hover:shadow-[0_16px_36px_rgba(123,97,255,0.2)] dark:border-violet-400/40 dark:from-[#1a2149] dark:via-[#121834] dark:to-[#0f1330] dark:hover:shadow-[0_20px_46px_rgba(49,82,185,0.34)]`}
                     style={{ transformStyle: "preserve-3d" }}
                   >
                     <div className="relative h-40 w-full">
@@ -322,11 +308,11 @@ export default function HomePage() {
                         src={item.src}
                         alt={item.title}
                         fill
-                        className="object-contain p-3 transition duration-500 group-hover:scale-105"
+                        className="object-contain p-3 transition duration-500 group-hover:scale-105 dark:brightness-110 dark:contrast-110 dark:saturate-125"
                         sizes="(min-width: 640px) 25vw, 50vw"
                       />
                     </div>
-                    <div className="border-t border-violet-500/15 bg-white/80 px-3 py-2 text-xs font-medium text-foreground">
+                    <div className="border-t border-violet-500/15 bg-white/80 px-3 py-2 text-xs font-medium text-foreground dark:border-violet-400/35 dark:bg-[#141a38] dark:text-violet-100">
                       {item.title}
                     </div>
                   </motion.div>
@@ -345,11 +331,11 @@ export default function HomePage() {
               viewport={{ once: true, margin: "-80px" }}
               transition={{ delay: i * 0.05, duration: 0.45 }}
               whileHover={{ y: -6, rotateX: 2.5, rotateY: i % 2 === 0 ? -2 : 2 }}
-              className="glass rounded-2xl border border-violet-500/20 p-6 shadow-card"
+              className="glass rounded-2xl border border-violet-500/20 p-6 shadow-card dark:border-violet-400/40"
               style={{ transformStyle: "preserve-3d" }}
             >
-              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-200/80 to-cyan-100">
-                <f.icon className="h-5 w-5 text-violet-700" />
+              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-200/80 to-cyan-100 dark:from-violet-500/35 dark:to-cyan-400/25">
+                <f.icon className="h-5 w-5 text-violet-700 dark:text-violet-100" />
               </div>
               <div className="text-base font-semibold">{f.title}</div>
               <p className="mt-2 text-sm text-muted">{f.body}</p>
@@ -357,7 +343,7 @@ export default function HomePage() {
           ))}
         </div>
 
-        <section className="mt-24 grid gap-8 rounded-3xl border border-violet-500/20 bg-white/90 p-8 lg:grid-cols-2 lg:items-center">
+        <section className="mt-24 grid gap-8 rounded-3xl border border-violet-500/20 bg-white/90 p-8 lg:grid-cols-2 lg:items-center dark:border-violet-400/35 dark:bg-gradient-to-br dark:from-[#171f46] dark:via-[#121735] dark:to-[#100f2e]">
           <div className="space-y-4">
             <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
               Write better product copy at scale
@@ -368,8 +354,8 @@ export default function HomePage() {
             </p>
             <div className="space-y-3">
               {steps.map((step) => (
-                <div key={step} className="flex items-center gap-3 text-sm text-foreground/90">
-                  <CheckCircle2 className="h-4 w-4 text-fuchsia-500" />
+                <div key={step} className="flex items-center gap-3 text-sm text-foreground/90 dark:text-violet-100/95">
+                  <CheckCircle2 className="h-4 w-4 text-fuchsia-500 dark:text-cyan-300" />
                   {step}
                 </div>
               ))}
@@ -380,7 +366,7 @@ export default function HomePage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.45 }}
-            className="glass rounded-2xl border border-violet-500/20 p-6"
+            className="glass rounded-2xl border border-violet-500/20 p-6 dark:border-violet-400/35 dark:bg-gradient-to-br dark:from-[#19224d] dark:via-[#13193a] dark:to-[#11132f]"
           >
             <div className="text-xs uppercase tracking-wide text-muted">Start creating instantly</div>
             <div className="mt-3 text-2xl font-semibold">Publish product descriptions in seconds</div>

@@ -155,13 +155,13 @@ export default function GeneratePage() {
           Use a crisp product photo or structured fields. At least one path is required before
           generation.
         </p>
-        <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-violet-400/25 bg-white/60 px-3 py-1 text-xs text-muted">
+        <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-violet-400/25 bg-white/60 px-3 py-1 text-xs text-muted dark:bg-[#121938]">
           <span className="font-medium text-foreground">
             Usage: {usage?.used ?? 0}/{usage?.limit ?? 0}
           </span>
           <span>Remaining: {usage?.remaining ?? 0}</span>
         </div>
-        <div className="mt-3 h-2 w-full max-w-md overflow-hidden rounded-full bg-white/20">
+        <div className="mt-3 h-2 w-full max-w-md overflow-hidden rounded-full bg-white/20 dark:bg-[#111733]">
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"
             initial={{ width: 0 }}
@@ -171,8 +171,8 @@ export default function GeneratePage() {
         </div>
       </div>
 
-      <div className="glass rounded-2xl p-1 shadow-card sm:p-2">
-        <div className="grid grid-cols-2 gap-1 rounded-xl bg-black/30 p-1">
+      <div className="glass rounded-2xl p-1 shadow-card sm:p-2 dark:bg-[#101633]">
+        <div className="grid grid-cols-2 gap-1 rounded-xl bg-black/30 p-1 dark:bg-[#0c1025]">
           <button
             type="button"
             onClick={() => setMode("text")}
@@ -252,21 +252,21 @@ export default function GeneratePage() {
                 exit={{ opacity: 0, y: -6 }}
                 className="grid gap-6 lg:grid-cols-2"
               >
-                <label className="group relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-gradient-to-b from-white/[0.04] to-transparent px-6 py-10 text-center transition hover:border-indigo-400/40">
+                <label className="group relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-gradient-to-b from-white/[0.04] to-transparent px-6 py-10 text-center transition hover:border-indigo-400/40 dark:border-violet-300/20 dark:from-[#131a3b] dark:to-[#0e132c]">
                   <input
                     type="file"
                     accept="image/*"
                     className="absolute inset-0 cursor-pointer opacity-0"
                     onChange={(e) => onFile(e.target.files?.[0] ?? null)}
                   />
-                  <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/[0.06] transition group-hover:scale-105">
+                  <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/[0.06] transition group-hover:scale-105 dark:bg-[#1a234c]">
                     <ImageIcon className="h-6 w-6 text-indigo-200" />
                   </div>
                   <div className="text-sm font-medium">Drop an image or click to upload</div>
                   <div className="mt-1 text-xs text-muted">PNG, JPG, WEBP up to ~20MB</div>
                 </label>
                 <div className="space-y-4">
-                  <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                  <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30 dark:bg-[#0b1024]">
                     {preview ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img

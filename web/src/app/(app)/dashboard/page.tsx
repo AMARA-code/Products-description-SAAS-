@@ -44,16 +44,16 @@ export default function DashboardPage() {
       : 0;
 
   return (
-    <div className="relative mx-auto max-w-5xl space-y-8 overflow-hidden sm:space-y-10">
+    <div className="relative mx-auto max-w-5xl space-y-8 overflow-hidden rounded-3xl border border-violet-400/20 bg-white/35 p-4 sm:p-6 sm:space-y-10 dark:border-violet-300/20 dark:bg-[#0f1d44]/70">
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute -left-14 top-10 -z-10 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl"
+        className="pointer-events-none absolute -left-14 top-10 -z-10 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl dark:opacity-40"
         animate={{ x: [0, 18, -14, 0], y: [0, -16, 10, 0], opacity: [0.35, 0.6, 0.42, 0.35] }}
         transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         aria-hidden
-        className="pointer-events-none absolute right-0 top-24 -z-10 h-44 w-44 rounded-full bg-cyan-400/18 blur-3xl"
+        className="pointer-events-none absolute right-0 top-24 -z-10 h-44 w-44 rounded-full bg-cyan-400/18 blur-3xl dark:opacity-35"
         animate={{ x: [0, -14, 12, 0], y: [0, 14, -12, 0], opacity: [0.28, 0.5, 0.34, 0.28] }}
         transition={{ duration: 12.5, repeat: Infinity, ease: "easeInOut" }}
       />
