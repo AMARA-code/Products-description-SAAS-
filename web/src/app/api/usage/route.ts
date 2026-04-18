@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { createSupabaseForApiRoute } from "@/lib/supabase/api-route";
+import {
+  checkSubscription,
+  normalizePlanType,
+  planLimitFor,
+} from "@/lib/subscriptionService";
 
 export async function GET(request: Request) {
   const supabase = await createSupabaseForApiRoute(request);
@@ -14,7 +19,7 @@ export async function GET(request: Request) {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("plan, ai_requests_used, ai_requests_limit")
+    .select("plan, plan_type, ai_requests_used, ai_requests_limit")
     .eq("id", user.id)
     .single();
 
@@ -23,8 +28,10 @@ export async function GET(request: Request) {
   }
 
   const month = new Date().toISOString().slice(0, 7);
+  const subscription = await checkSubscription(supabase, user.id);
+  const planType = normalizePlanType(profile.plan_type ?? profile.plan?.toLowerCase());
   const trackedUsed = profile.ai_requests_used ?? 0;
-  const limit = profile.ai_requests_limit ?? 60;
+  const limit = profile.ai_requests_limit ?? planLimitFor(planType);
   let used = trackedUsed;
 
   // Backfill legacy accounts where history exists but tracker was never incremented.
@@ -49,5 +56,8 @@ export async function GET(request: Request) {
     limit,
     remaining,
     plan: profile.plan ?? "BASIC",
+    planType,
+    subscriptionStatus: subscription.profile?.subscription_status ?? "inactive",
+    subscriptionAllowed: subscription.allowed,
   });
 }

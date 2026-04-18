@@ -1,9 +1,10 @@
--- Describeflow — run in Supabase SQL Editor (PostgreSQL 15+)
--- Creates tables, RLS, and RPCs for usage + auth-linked profiles.
+-- Describeflow production full setup (single-run script)
+-- Safe to run multiple times.
+-- Includes base schema + PayFast/subscription hardening.
 
 create extension if not exists "pgcrypto";
 
--- Profiles (1:1 with auth.users)
+-- Profiles
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   email text,
@@ -19,7 +20,7 @@ create table if not exists public.profiles (
 
 create index if not exists profiles_stripe_customer_id_idx on public.profiles (stripe_customer_id);
 
--- Monthly usage (resets by calendar month key YYYY-MM)
+-- Usage
 create table if not exists public.usage_monthly (
   user_id uuid not null references public.profiles (id) on delete cascade,
   year_month text not null,
@@ -28,7 +29,7 @@ create table if not exists public.usage_monthly (
   primary key (user_id, year_month)
 );
 
--- Generated descriptions history
+-- Generations
 create table if not exists public.generations (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles (id) on delete cascade,
@@ -44,7 +45,7 @@ create table if not exists public.generations (
 create index if not exists generations_user_created_idx
   on public.generations (user_id, created_at desc);
 
--- Payment records (Stripe Checkout / webhooks)
+-- Payments
 create table if not exists public.payments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references public.profiles (id) on delete set null,
@@ -56,7 +57,7 @@ create table if not exists public.payments (
   created_at timestamptz not null default now()
 );
 
--- New user → profile row
+-- Auth trigger
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -80,7 +81,7 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Consume one generation if under limit (current calendar month)
+-- Usage consume function
 create or replace function public.try_consume_generation()
 returns jsonb
 language plpgsql
@@ -136,7 +137,7 @@ $try_consume$;
 
 grant execute on function public.try_consume_generation() to authenticated;
 
--- Refund one generation if AI failed after consume
+-- Usage refund function
 create or replace function public.refund_generation()
 returns jsonb
 language plpgsql
@@ -197,6 +198,125 @@ drop policy if exists "payments_select_own" on public.payments;
 create policy "payments_select_own" on public.payments
   for select using (auth.uid() = user_id);
 
+-- PayFast compatibility fields
+alter table public.profiles
+  add column if not exists plan text,
+  add column if not exists ai_requests_used integer,
+  add column if not exists ai_requests_limit integer,
+  add column if not exists expiry_date timestamptz;
 
--- Storage bucket (create bucket "product-images" in Dashboard → Storage; set policies as needed)
--- Public read optional; authenticated upload recommended.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'profiles_plan_check'
+  ) then
+    alter table public.profiles
+      add constraint profiles_plan_check
+      check (plan in ('BASIC', 'PRO', 'AGENCY'));
+  end if;
+end$$;
+
+update public.profiles
+set
+  plan = case
+    when coalesce(plan, '') <> '' then plan
+    when plan_slug = 'pro' then 'PRO'
+    when plan_slug = 'agency' then 'AGENCY'
+    else 'BASIC'
+  end,
+  ai_requests_used = coalesce(ai_requests_used, 0),
+  ai_requests_limit = case
+    when ai_requests_limit is not null then ai_requests_limit
+    when monthly_generation_limit is not null and monthly_generation_limit > 0 then monthly_generation_limit
+    when plan_slug = 'pro' then 2000
+    when plan_slug = 'agency' then 10000
+    else 60
+  end,
+  subscription_status = coalesce(nullif(subscription_status, ''), 'inactive'),
+  expiry_date = coalesce(expiry_date, now());
+
+alter table public.profiles
+  alter column plan set default 'BASIC',
+  alter column plan set not null,
+  alter column ai_requests_used set default 0,
+  alter column ai_requests_used set not null,
+  alter column ai_requests_limit set default 60,
+  alter column ai_requests_limit set not null,
+  alter column subscription_status set default 'inactive',
+  alter column subscription_status set not null;
+
+-- Subscription hardening fields
+alter table public.profiles
+  add column if not exists plan_type text,
+  add column if not exists subscription_start timestamptz,
+  add column if not exists subscription_end timestamptz;
+
+update public.profiles
+set plan_type = case
+  when lower(coalesce(plan_type, '')) in ('basic', 'pro', 'enterprise') then lower(plan_type)
+  when plan = 'PRO' then 'pro'
+  when plan = 'AGENCY' then 'enterprise'
+  else 'basic'
+end
+where plan_type is null or trim(plan_type) = '';
+
+update public.profiles
+set subscription_start = coalesce(subscription_start, now())
+where subscription_start is null;
+
+update public.profiles
+set subscription_end = coalesce(subscription_end, expiry_date, now() + interval '30 day')
+where subscription_end is null;
+
+alter table public.profiles
+  alter column plan_type set default 'basic',
+  alter column plan_type set not null;
+
+create index if not exists profiles_email_idx on public.profiles (email);
+create index if not exists profiles_subscription_status_idx on public.profiles (subscription_status);
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relname = 'users'
+      and c.relkind in ('r', 'p')
+  ) then
+    create or replace view public.users as
+    select
+      id,
+      email,
+      plan_type,
+      subscription_status,
+      subscription_start,
+      subscription_end,
+      updated_at
+    from public.profiles;
+  end if;
+end$$;
+
+alter table public.payments
+  add column if not exists provider text,
+  add column if not exists payment_id text,
+  add column if not exists event_type text,
+  add column if not exists raw_payload jsonb,
+  add column if not exists signature_valid boolean default false,
+  add column if not exists verified_at timestamptz,
+  add column if not exists processed_at timestamptz,
+  add column if not exists amount numeric;
+
+update public.payments
+set provider = coalesce(provider, 'stripe')
+where provider is null;
+
+create unique index if not exists payments_provider_payment_id_uniq
+  on public.payments (provider, payment_id)
+  where payment_id is not null;
+
+create index if not exists payments_provider_status_idx
+  on public.payments (provider, status, created_at desc);

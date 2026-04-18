@@ -62,6 +62,24 @@ export async function POST(request: Request) {
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
+
+    const start = new Date();
+    const end = new Date(start);
+    end.setUTCDate(end.getUTCDate() + 30);
+    await admin
+      .from("profiles")
+      .update({
+        plan: "BASIC",
+        plan_type: "basic",
+        subscription_status: "active",
+        subscription_start: start.toISOString(),
+        subscription_end: end.toISOString(),
+        expiry_date: end.toISOString(),
+        ai_requests_limit: 60,
+        ai_requests_used: 0,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.user.id);
   }
 
   return NextResponse.json({ ok: true });

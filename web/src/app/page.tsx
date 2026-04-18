@@ -128,6 +128,11 @@ export default function HomePage() {
           <Link href="/pricing" className="hidden text-muted transition hover:text-foreground sm:inline-flex">
             Pricing
           </Link>
+          <Link href="/contact" className="hidden sm:inline-flex">
+            <Button variant="outline" size="sm">
+              Contact
+            </Button>
+          </Link>
           <Link href="/login" className="hidden sm:inline-flex">
             <Button variant="ghost" size="sm">
               Sign in
@@ -389,6 +394,34 @@ export default function HomePage() {
           </motion.div>
         </section>
       </main>
+      <footer className="mx-auto w-full max-w-6xl px-6 pb-10">
+        <div className="glass flex flex-col gap-4 rounded-2xl px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-muted">
+            <span className="font-medium text-foreground">Describeflow</span> - AI product
+            description SaaS
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <Link href="/privacy-policy" className="text-muted transition hover:text-foreground">
+              Privacy Policy
+            </Link>
+            <Link
+              href="/terms-and-conditions"
+              className="text-muted transition hover:text-foreground"
+            >
+              Terms & Conditions
+            </Link>
+            <Link href="/service-policy" className="text-muted transition hover:text-foreground">
+              Service Policy
+            </Link>
+            <Link
+              href="/contact"
+              className="inline-flex items-center rounded-xl border border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-card px-3 py-1.5 text-foreground transition hover:bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]"
+            >
+              Contact
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

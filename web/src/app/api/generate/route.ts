@@ -6,6 +6,11 @@ import {
   generateMockFromImage,
   generateMockFromText,
 } from "@/lib/openai-generate";
+import {
+  checkSubscription,
+  normalizePlanType,
+  planLimitFor,
+} from "@/lib/subscriptionService";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -59,7 +64,7 @@ export async function POST(request: Request) {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("plan, subscription_status, ai_requests_used, ai_requests_limit, expiry_date")
+    .select("plan, plan_type, subscription_status, subscription_end, ai_requests_used, ai_requests_limit, expiry_date")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -67,23 +72,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
-  const plan = profile.plan ?? "BASIC";
-  const isBasic = plan === "BASIC";
-
-  const isActive = profile.subscription_status === "active";
-  const isExpired = !profile.expiry_date || new Date(profile.expiry_date) <= new Date();
-  if (!isBasic && (!isActive || isExpired)) {
+  const subscription = await checkSubscription(supabase, user.id);
+  if (!subscription.allowed) {
     return NextResponse.json(
       {
         error: "subscription_required",
-        reason: "active_subscription_required",
+        reason: subscription.reason ?? "active_subscription_required",
       },
       { status: 402 },
     );
   }
 
+  const planType = normalizePlanType(profile.plan_type ?? profile.plan?.toLowerCase());
   const used = profile.ai_requests_used ?? 0;
-  const limit = profile.ai_requests_limit ?? 0;
+  const limit = profile.ai_requests_limit ?? planLimitFor(planType);
   if (used >= limit) {
     return NextResponse.json(
       {
@@ -109,7 +111,7 @@ export async function POST(request: Request) {
   let description: string;
   try {
     if (mode === "text") {
-      description = isBasic
+      description = planType === "basic"
         ? await generateMockFromText({
             productName: body.productName!.trim(),
             category: body.category?.trim(),
@@ -119,7 +121,7 @@ export async function POST(request: Request) {
             category: body.category?.trim(),
           });
     } else {
-      description = isBasic
+      description = planType === "basic"
         ? await generateMockFromImage({
             base64: body.imageBase64!,
             mimeType: body.mimeType!,

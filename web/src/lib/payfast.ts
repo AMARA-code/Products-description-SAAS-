@@ -1,4 +1,4 @@
-import { createHash } from "crypto";
+import { createHash, timingSafeEqual } from "crypto";
 import { PLANS, type PlanSlug } from "@/lib/plans";
 
 type PayFastEnv = {
@@ -81,5 +81,10 @@ export function verifyPayFastSignature(
 ): boolean {
   const passphrase = process.env.PAYFAST_PASSPHRASE?.trim() || undefined;
   const computed = buildSignature(fields, passphrase);
-  return computed === signature;
+  const received = (signature ?? "").trim().toLowerCase();
+  const expected = computed.toLowerCase();
+  const receivedBuffer = Buffer.from(received);
+  const expectedBuffer = Buffer.from(expected);
+  if (receivedBuffer.length !== expectedBuffer.length) return false;
+  return timingSafeEqual(receivedBuffer, expectedBuffer);
 }
