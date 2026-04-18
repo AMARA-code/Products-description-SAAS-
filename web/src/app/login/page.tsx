@@ -2,8 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
-import { motion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -33,7 +31,12 @@ function LoginInner() {
         password,
       });
       if (error) {
-        toast.error(error.message);
+        const normalized = error.message.toLowerCase();
+        if (normalized.includes("invalid login credentials")) {
+          toast.error("Incorrect password.");
+        } else {
+          toast.error(error.message);
+        }
         return;
       }
       router.push(next);
@@ -50,34 +53,14 @@ function LoginInner() {
   };
 
   return (
-    <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute -left-14 top-10 -z-10 h-40 w-40 rounded-full bg-violet-500/35 blur-3xl"
-        animate={{ x: [0, 28, -14, 0], y: [0, -18, 12, 0], opacity: [0.3, 0.55, 0.35, 0.3] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute -right-12 bottom-8 -z-10 h-36 w-36 rounded-full bg-cyan-400/30 blur-3xl"
-        animate={{ x: [0, -20, 18, 0], y: [0, 16, -12, 0], opacity: [0.25, 0.45, 0.3, 0.25] }}
-        transition={{ duration: 9.5, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[34px]">
-        <Image
-          src="/images/hero-product-1.svg"
-          alt=""
-          fill
-          className="object-cover opacity-20"
-          sizes="100vw"
-          priority
-        />
+    <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center px-4 py-10 sm:px-6 sm:py-14 lg:px-10">
+      <div className="pointer-events-none absolute inset-2 -z-10 overflow-hidden rounded-[34px]">
+        <div className="absolute inset-0 bg-[radial-gradient(120%_100%_at_0%_0%,color-mix(in_srgb,var(--accent)_15%,transparent)_0%,transparent_48%),radial-gradient(120%_100%_at_100%_100%,color-mix(in_srgb,var(--accent-3)_14%,transparent)_0%,transparent_52%),linear-gradient(160deg,color-mix(in_srgb,var(--card)_95%,transparent),color-mix(in_srgb,var(--card-2)_82%,transparent))]" />
       </div>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass rounded-2xl p-8 shadow-card"
-      >
+      <div className="pointer-events-none absolute inset-2 -z-10 hidden overflow-hidden rounded-[34px] dark:block">
+        <div className="absolute inset-0 bg-[radial-gradient(120%_100%_at_0%_0%,color-mix(in_srgb,var(--accent)_18%,transparent)_0%,transparent_48%),radial-gradient(120%_100%_at_100%_100%,color-mix(in_srgb,var(--accent-2)_18%,transparent)_0%,transparent_52%),linear-gradient(160deg,color-mix(in_srgb,var(--card)_92%,transparent),color-mix(in_srgb,var(--card-2)_80%,transparent))]" />
+      </div>
+      <div className="glass mx-auto w-full max-w-2xl rounded-2xl p-8 shadow-card sm:p-10">
         <div className="mb-6 space-y-1 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
           <p className="text-sm text-muted">Sign in to your Describeflow workspace.</p>
@@ -111,13 +94,24 @@ function LoginInner() {
             {loading ? "Signing in…" : "Sign in"}
           </Button>
         </form>
+        <div className="mt-4 text-center">
+          <Link
+            href="/forgot-password"
+            className="text-xs text-muted transition-colors hover:text-[color-mix(in_srgb,var(--accent)_72%,var(--foreground))]"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <p className="mt-6 text-center text-xs text-muted">
           No account?{" "}
-          <Link href="/signup" className="text-fuchsia-600 transition-colors hover:text-violet-700">
+          <Link
+            href="/signup"
+            className="transition-colors hover:text-[color-mix(in_srgb,var(--accent)_72%,var(--foreground))]"
+          >
             Create one
           </Link>
         </p>
-      </motion.div>
+      </div>
     </div>
   );
 }

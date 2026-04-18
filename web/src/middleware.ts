@@ -6,6 +6,7 @@ const protectedPrefixes = ["/dashboard", "/generate", "/history", "/settings"];
 export async function middleware(request: NextRequest) {
   const { supabaseResponse, user, supabase } = await updateSession(request);
   const path = request.nextUrl.pathname;
+  const switchMode = request.nextUrl.searchParams.get("switch") === "1";
 
   const isProtected = protectedPrefixes.some((p) => path === p || path.startsWith(`${p}/`));
 
@@ -16,7 +17,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if ((path === "/login" || path === "/signup") && user) {
+  if ((path === "/login" || path === "/signup") && user && !switchMode) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

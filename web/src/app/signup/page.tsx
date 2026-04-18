@@ -1,8 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import Image from "next/image";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -10,6 +9,7 @@ import { toast } from "sonner";
 
 export default function SignupPage() {
   const router = useRouter();
+  const supabase = createClient();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,9 +36,19 @@ export default function SignupPage() {
         return;
       }
 
-      // Skip immediate auto-login to avoid transient invalid-credential race.
-      toast.success("Account created successfully. Please sign in.");
-      router.push(`/login?email=${encodeURIComponent(normalizedEmail)}`);
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
+      if (loginError) {
+        toast.success("Account created. Please sign in.");
+        router.push(`/login?email=${encodeURIComponent(normalizedEmail)}`);
+        return;
+      }
+
+      toast.success("Welcome!");
+      router.push("/dashboard");
+      router.refresh();
     } catch (err) {
       const message =
         err instanceof Error
@@ -51,34 +61,14 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-4 py-12 sm:px-6 sm:py-16">
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute -left-12 top-12 -z-10 h-36 w-36 rounded-full bg-fuchsia-500/30 blur-3xl"
-        animate={{ x: [0, 24, -16, 0], y: [0, -14, 10, 0], opacity: [0.28, 0.5, 0.32, 0.28] }}
-        transition={{ duration: 8.8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute -right-14 bottom-10 -z-10 h-44 w-44 rounded-full bg-violet-500/28 blur-3xl"
-        animate={{ x: [0, -22, 16, 0], y: [0, 20, -10, 0], opacity: [0.24, 0.46, 0.3, 0.24] }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-[34px]">
-        <Image
-          src="/images/hero-product-2.svg"
-          alt=""
-          fill
-          className="object-cover opacity-20"
-          sizes="100vw"
-          priority
-        />
+    <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center px-4 py-10 sm:px-6 sm:py-14 lg:px-10">
+      <div className="pointer-events-none absolute inset-2 -z-10 overflow-hidden rounded-[34px]">
+        <div className="absolute inset-0 bg-[radial-gradient(120%_100%_at_0%_0%,color-mix(in_srgb,var(--accent-2)_14%,transparent)_0%,transparent_48%),radial-gradient(120%_100%_at_100%_100%,color-mix(in_srgb,var(--accent-3)_14%,transparent)_0%,transparent_52%),linear-gradient(160deg,color-mix(in_srgb,var(--card)_95%,transparent),color-mix(in_srgb,var(--card-2)_82%,transparent))]" />
       </div>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass rounded-2xl p-8 shadow-card"
-      >
+      <div className="pointer-events-none absolute inset-2 -z-10 hidden overflow-hidden rounded-[34px] dark:block">
+        <div className="absolute inset-0 bg-[radial-gradient(120%_100%_at_0%_0%,color-mix(in_srgb,var(--accent-2)_18%,transparent)_0%,transparent_48%),radial-gradient(120%_100%_at_100%_100%,color-mix(in_srgb,var(--accent)_18%,transparent)_0%,transparent_52%),linear-gradient(160deg,color-mix(in_srgb,var(--card)_92%,transparent),color-mix(in_srgb,var(--card-2)_80%,transparent))]" />
+      </div>
+      <div className="glass mx-auto w-full max-w-2xl rounded-2xl p-8 shadow-card sm:p-10">
         <div className="mb-6 space-y-1 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">Create your workspace</h1>
           <p className="text-sm text-muted">Start generating descriptions in minutes.</p>
@@ -124,11 +114,14 @@ export default function SignupPage() {
         </form>
         <p className="mt-6 text-center text-xs text-muted">
           Already have an account?{" "}
-          <Link href="/login" className="text-fuchsia-600 transition-colors hover:text-violet-700">
+          <Link
+            href="/login"
+            className="transition-colors hover:text-[color-mix(in_srgb,var(--accent)_72%,var(--foreground))]"
+          >
             Sign in
           </Link>
         </p>
-      </motion.div>
+      </div>
     </div>
   );
 }

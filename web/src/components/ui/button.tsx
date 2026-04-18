@@ -15,12 +15,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] disabled:pointer-events-none disabled:opacity-40";
     const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
       primary:
-        "bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-500 text-white shadow-[0_12px_34px_rgba(123,97,255,0.34)] hover:shadow-[0_16px_42px_rgba(123,97,255,0.42)] hover:saturate-125",
+        "text-white shadow-[var(--button-primary-shadow)] hover:shadow-[var(--button-primary-shadow-hover)] hover:saturate-110",
       ghost:
-        "bg-transparent text-foreground/90 hover:bg-violet-500/10 hover:text-violet-700",
+        "bg-transparent text-foreground/90 hover:bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] hover:text-[color-mix(in_srgb,var(--accent)_70%,var(--foreground))]",
       outline:
-        "border border-violet-400/35 bg-white/90 text-foreground hover:bg-violet-100/55 hover:border-violet-500/45",
-      danger: "bg-red-500/90 text-white hover:bg-red-500",
+        "border border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-card text-foreground hover:bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]",
+      danger: "bg-danger/90 text-white hover:bg-danger",
     };
     const sizes: Record<NonNullable<ButtonProps["size"]>, string> = {
       sm: "h-9 px-3 text-sm",
@@ -30,12 +30,22 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const variantKey = variant as keyof typeof variants;
     const sizeKey = size as keyof typeof sizes;
 
+    const baseStyle =
+      variantKey === "primary"
+        ? ({
+            background:
+              "linear-gradient(90deg, var(--brand-from), var(--brand-via), var(--brand-to))",
+            ...(props.style ?? {}),
+          } as React.CSSProperties)
+        : props.style;
+
     return (
       <motion.button
         ref={ref}
         whileTap={{ scale: 0.97 }}
         whileHover={{ y: -2 }}
         className={cn(base, variants[variantKey], sizes[sizeKey], className)}
+        style={baseStyle}
         {...props}
       />
     );

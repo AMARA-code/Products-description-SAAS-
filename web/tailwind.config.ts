@@ -6,6 +6,7 @@ export default {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
@@ -13,7 +14,15 @@ export default {
         foreground: "var(--foreground)",
         muted: "var(--muted)",
         card: "var(--card)",
+        "card-2": "var(--card-2)",
+        border: "var(--border)",
+        ring: "var(--ring)",
         accent: "var(--accent)",
+        "accent-2": "var(--accent-2)",
+        "accent-3": "var(--accent-3)",
+        "accent-soft": "var(--accent-soft)",
+        danger: "var(--danger)",
+        success: "var(--success)",
       },
       boxShadow: {
         glow: "0 0 0 1px rgba(99,102,241,0.25), 0 20px 50px -20px rgba(99,102,241,0.35)",

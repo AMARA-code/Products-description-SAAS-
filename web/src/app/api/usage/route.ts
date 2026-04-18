@@ -23,8 +23,24 @@ export async function GET(request: Request) {
   }
 
   const month = new Date().toISOString().slice(0, 7);
-  const used = profile.ai_requests_used ?? 0;
+  const trackedUsed = profile.ai_requests_used ?? 0;
   const limit = profile.ai_requests_limit ?? 60;
+  let used = trackedUsed;
+
+  // Backfill legacy accounts where history exists but tracker was never incremented.
+  const { count: generationsCount } = await supabase
+    .from("generations")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  if (typeof generationsCount === "number" && generationsCount > trackedUsed) {
+    used = generationsCount;
+    await supabase
+      .from("profiles")
+      .update({ ai_requests_used: used })
+      .eq("id", user.id);
+  }
+
   const remaining = Math.max(0, limit - used);
 
   return NextResponse.json({

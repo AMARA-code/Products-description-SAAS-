@@ -48,8 +48,5 @@ export async function GET(request: Request) {
     return firstIndex === idx;
   });
 
-  // Hide the oldest legacy item (pre-tracker era) so history aligns with tracked usage.
-  const withoutLegacyFirst = deduped.length > 0 ? deduped.slice(0, -1) : deduped;
-
-  return NextResponse.json({ items: withoutLegacyFirst });
+  return NextResponse.json({ items: deduped });
 }
