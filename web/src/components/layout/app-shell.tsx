@@ -114,7 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               exit={{ x: -16, opacity: 0 }}
               transition={{ duration: 0.26, ease: "easeOut" }}
               className="glass relative h-full w-full p-4 sm:w-[360px] sm:max-w-[85vw] lg:w-[380px]"
-              onMouseDown={(e) => e.stopPropagation()}
+              onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
             >
               <div className="flex h-full flex-col">
                 <div className="flex items-start justify-between gap-4">
