@@ -31,22 +31,9 @@ export async function GET(request: Request) {
   const subscription = await checkSubscription(supabase, user.id);
   const planType = normalizePlanType(profile.plan_type ?? profile.plan?.toLowerCase());
   const trackedUsed = profile.ai_requests_used ?? 0;
-  const limit = profile.ai_requests_limit ?? planLimitFor(planType);
-  let used = trackedUsed;
-
-  // Backfill legacy accounts where history exists but tracker was never incremented.
-  const { count: generationsCount } = await supabase
-    .from("generations")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id);
-
-  if (typeof generationsCount === "number" && generationsCount > trackedUsed) {
-    used = generationsCount;
-    await supabase
-      .from("profiles")
-      .update({ ai_requests_used: used })
-      .eq("id", user.id);
-  }
+  const planLimit = planLimitFor(planType);
+  const limit = planType === "basic" ? planLimit : (profile.ai_requests_limit ?? planLimit);
+  const used = trackedUsed;
 
   const remaining = Math.max(0, limit - used);
 

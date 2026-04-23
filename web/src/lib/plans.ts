@@ -14,11 +14,11 @@ export const PLANS: Record<
   basic: {
     name: "Basic",
     description: "Free plan for testing and light usage.",
-    monthlyLimit: 60,
+    monthlyLimit: 20,
     priceUsd: 0,
     features: [
-      "60 AI requests / month",
-      "Mock AI generation",
+      "20 AI requests / month",
+      "Real AI description generation",
       "Limited feature access",
       "Upgrade anytime",
     ],
@@ -28,7 +28,7 @@ export const PLANS: Record<
     name: "Pro",
     description: "For growth teams that need higher limits and full access.",
     monthlyLimit: 2000,
-    priceUsd: 15,
+    priceUsd: 20,
     features: [
       "2,000 AI requests / month",
       "Full feature access",

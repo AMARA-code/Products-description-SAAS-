@@ -50,3 +50,35 @@ export async function GET(request: Request) {
 
   return NextResponse.json({ items: deduped });
 }
+
+export async function DELETE(request: Request) {
+  const supabase = await createSupabaseForApiRoute(request);
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { error: deleteError } = await supabase
+    .from("generations")
+    .delete()
+    .eq("user_id", user.id);
+
+  if (deleteError) {
+    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+  }
+
+  const { error: usageResetError } = await supabase
+    .from("profiles")
+    .update({ ai_requests_used: 0 })
+    .eq("id", user.id);
+
+  if (usageResetError) {
+    return NextResponse.json({ error: usageResetError.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
+}

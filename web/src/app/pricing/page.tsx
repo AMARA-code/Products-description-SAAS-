@@ -129,7 +129,7 @@ export default function PricingPage() {
                 ) : user === null ? (
                   slug === "basic" ? "Sign in to start free" : "Sign in to subscribe"
                 ) : slug === "basic" ? (
-                  "Start free"
+                  "Start for free"
                 ) : (
                   `Choose ${p.name}`
                 )}

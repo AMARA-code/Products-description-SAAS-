@@ -16,13 +16,17 @@ type Usage = {
   limit: number;
   remaining: number;
   plan: string;
+  planType?: string;
 };
+
+const BASIC_FALLBACK_MESSAGE = "Unable to generate description at the moment";
 
 export default function GeneratePage() {
   const [mode, setMode] = useState<Mode>("text");
   const [productName, setProductName] = useState("");
   const [category, setCategory] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [wordLimit, setWordLimit] = useState("120");
   const [preview, setPreview] = useState<string | null>(null);
   const [mimeType, setMimeType] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,6 +39,9 @@ export default function GeneratePage() {
     if (limit <= 0) return 0;
     return Math.min(100, Math.round(((usage?.used ?? 0) / limit) * 100));
   }, [usage]);
+  const isBasicPlan =
+    (usage?.planType ?? "").toLowerCase() === "basic" ||
+    (usage?.plan ?? "").toUpperCase() === "BASIC";
 
   const canSubmit = useMemo(() => {
     if (mode === "text") return productName.trim().length > 0;
@@ -83,12 +90,18 @@ export default function GeneratePage() {
     setResult(null);
     setLimitHit(false);
     try {
+      const parsedWordLimit = Number(wordLimit);
+      if (!Number.isFinite(parsedWordLimit)) {
+        toast.error("Enter a valid word limit.");
+        return;
+      }
       let body: Record<string, unknown>;
       if (mode === "text") {
         body = {
           mode: "text",
           productName: productName.trim(),
           category: category.trim() || undefined,
+          wordLimit: parsedWordLimit,
         };
       } else {
         const dataUrl = preview!;
@@ -100,6 +113,7 @@ export default function GeneratePage() {
           mimeType: mimeType ?? "image/jpeg",
           productName: productName.trim() || undefined,
           category: category.trim() || undefined,
+          wordLimit: parsedWordLimit,
         };
       }
 
@@ -122,7 +136,11 @@ export default function GeneratePage() {
       if (!res.ok) {
         throw new Error(payload.error ?? "Request failed");
       }
-      setResult(payload.description as string);
+      const description = String(payload.description ?? "");
+      if (description === BASIC_FALLBACK_MESSAGE) {
+        throw new Error(BASIC_FALLBACK_MESSAGE);
+      }
+      setResult(description);
       if (payload?.usage?.used !== undefined && payload?.usage?.limit !== undefined) {
         const used = Number(payload.usage.used);
         const limit = Number(payload.usage.limit);
@@ -195,13 +213,21 @@ export default function GeneratePage() {
           </button>
           <button
             type="button"
-            onClick={() => setMode("image")}
+            onClick={() => {
+              if (isBasicPlan) {
+                toast.error("Image-based generation is available on Pro and above.");
+                return;
+              }
+              setMode("image");
+            }}
             className={cn(
               "relative flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition",
               mode === "image"
                 ? "text-white"
                 : "text-muted hover:text-foreground",
+              isBasicPlan && "cursor-not-allowed opacity-60 hover:text-muted",
             )}
+            aria-disabled={isBasicPlan}
           >
             {mode === "image" && (
               <motion.div
@@ -216,6 +242,21 @@ export default function GeneratePage() {
         </div>
 
         <div className="mt-6 space-y-5 p-4 sm:p-6">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="space-y-2 text-sm">
+              <span className="text-muted">Description word limit</span>
+              <input
+                type="number"
+                min={30}
+                max={500}
+                step={1}
+                value={wordLimit}
+                onChange={(e) => setWordLimit(e.target.value)}
+                placeholder="e.g. 120"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-[var(--ring)]"
+              />
+            </label>
+          </div>
           <AnimatePresence mode="wait">
             {mode === "text" ? (
               <motion.div

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createSupabaseForApiRoute } from "@/lib/supabase/api-route";
 import {
+  generateBasicFromImageWithGemini,
+  generateBasicFromTextWithGemini,
   generateFromImage,
   generateFromText,
-  generateMockFromImage,
-  generateMockFromText,
 } from "@/lib/openai-generate";
 import {
   checkSubscription,
@@ -21,6 +21,7 @@ type Body = {
   category?: string;
   imageBase64?: string;
   mimeType?: string;
+  wordLimit?: number;
 };
 
 export async function POST(request: Request) {
@@ -62,6 +63,12 @@ export async function POST(request: Request) {
     }
   }
 
+  const requestedWordLimit = Number(body.wordLimit ?? 120);
+  if (!Number.isFinite(requestedWordLimit)) {
+    return NextResponse.json({ error: "wordLimit must be a number" }, { status: 400 });
+  }
+  const wordLimit = Math.max(30, Math.min(500, Math.floor(requestedWordLimit)));
+
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("plan, plan_type, subscription_status, subscription_end, ai_requests_used, ai_requests_limit, expiry_date")
@@ -72,8 +79,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
+  const planType = normalizePlanType(profile.plan_type ?? profile.plan?.toLowerCase());
+  if (planType === "basic" && mode === "image") {
+    return NextResponse.json(
+      { error: "Image-based generation is available on Pro and above." },
+      { status: 403 },
+    );
+  }
+
   const subscription = await checkSubscription(supabase, user.id);
-  if (!subscription.allowed) {
+  // Basic/free users should be able to generate without paid subscription.
+  if (planType !== "basic" && !subscription.allowed) {
     return NextResponse.json(
       {
         error: "subscription_required",
@@ -83,13 +99,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const planType = normalizePlanType(profile.plan_type ?? profile.plan?.toLowerCase());
   const used = profile.ai_requests_used ?? 0;
-  const limit = profile.ai_requests_limit ?? planLimitFor(planType);
+  const planLimit = planLimitFor(planType);
+  const limit = planType === "basic" ? planLimit : (profile.ai_requests_limit ?? planLimit);
   if (used >= limit) {
     return NextResponse.json(
       {
-        error: "limit_reached",
+        error: "Monthly limit reached. Please upgrade your plan.",
         reason: "ai_requests_limit_exceeded",
         used,
         limit,
@@ -98,48 +114,57 @@ export async function POST(request: Request) {
     );
   }
 
-  const nextUsed = used + 1;
-  const { error: reserveError } = await supabase
-    .from("profiles")
-    .update({ ai_requests_used: nextUsed })
-    .eq("id", user.id);
-
-  if (reserveError) {
-    return NextResponse.json({ error: reserveError.message }, { status: 500 });
-  }
-
   let description: string;
   try {
     if (mode === "text") {
-      description = planType === "basic"
-        ? await generateMockFromText({
-            productName: body.productName!.trim(),
-            category: body.category?.trim(),
-          })
-        : await generateFromText({
-            productName: body.productName!.trim(),
-            category: body.category?.trim(),
-          });
+      if (planType === "basic") {
+        description = await generateBasicFromTextWithGemini({
+          productName: body.productName!.trim(),
+          category: body.category?.trim(),
+          wordLimit,
+        });
+      } else {
+        description = await generateFromText({
+          productName: body.productName!.trim(),
+          category: body.category?.trim(),
+          wordLimit,
+        });
+      }
     } else {
-      description = planType === "basic"
-        ? await generateMockFromImage({
-            base64: body.imageBase64!,
-            mimeType: body.mimeType!,
-            productHint: body.productName?.trim() || body.category?.trim(),
-          })
-        : await generateFromImage({
-            base64: body.imageBase64!,
-            mimeType: body.mimeType!,
-            productHint: body.productName?.trim() || body.category?.trim(),
-          });
+      if (planType === "basic") {
+        description = await generateBasicFromImageWithGemini({
+          base64: body.imageBase64!,
+          mimeType: body.mimeType!,
+          productHint: body.productName?.trim() || body.category?.trim(),
+          wordLimit,
+        });
+      } else {
+        description = await generateFromImage({
+          base64: body.imageBase64!,
+          mimeType: body.mimeType!,
+          productHint: body.productName?.trim() || body.category?.trim(),
+          wordLimit,
+        });
+      }
     }
   } catch (e) {
-    await supabase
-      .from("profiles")
-      .update({ ai_requests_used: used })
-      .eq("id", user.id);
-    const message = e instanceof Error ? e.message : "Generation failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    if (planType === "basic") {
+      console.error("[basic-gemini-generation-failed]", e);
+      return NextResponse.json(
+        { error: "Unable to generate description at the moment" },
+        { status: 502 },
+      );
+    } else {
+      const message = e instanceof Error ? e.message : "Generation failed";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  }
+
+  if (!description.trim()) {
+    return NextResponse.json(
+      { error: "Unable to generate description at the moment" },
+      { status: 502 },
+    );
   }
 
   const title =
@@ -162,11 +187,17 @@ export async function POST(request: Request) {
     .single();
 
   if (insertError) {
-    await supabase
-      .from("profiles")
-      .update({ ai_requests_used: used })
-      .eq("id", user.id);
     return NextResponse.json({ error: insertError.message }, { status: 500 });
+  }
+
+  const nextUsed = used + 1;
+  const { error: usageUpdateError } = await supabase
+    .from("profiles")
+    .update({ ai_requests_used: nextUsed })
+    .eq("id", user.id);
+
+  if (usageUpdateError) {
+    return NextResponse.json({ error: usageUpdateError.message }, { status: 500 });
   }
 
   return NextResponse.json({

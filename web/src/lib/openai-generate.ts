@@ -1,3 +1,5 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
 function hashString(input: string): number {
   // Fast deterministic hash for stable mock output.
   let h = 2166136261;
@@ -120,22 +122,27 @@ function buildMockDescription(input: {
 export async function generateFromText(input: {
   productName: string;
   category?: string;
+  wordLimit?: number;
 }): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is missing for paid plan generation");
+    throw new Error("OPENAI_API_KEY is missing for generation");
   }
 
   const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+  const wordLimit = input.wordLimit ?? 120;
   const prompt = `Write a high-converting ecommerce product description.
 Product name: ${input.productName}
 Category: ${input.category ?? "General"}
+Maximum words: ${wordLimit}
 
 Return plain text only with:
 1) A short headline
 2) A persuasive paragraph
 3) 3 bullet benefits
-4) A short CTA`;
+4) A short CTA
+
+Hard rule: keep the entire output under ${wordLimit} words.`;
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -166,24 +173,66 @@ Return plain text only with:
   return payload.output_text.trim();
 }
 
-export async function generateFromImage(input: {
-  base64: string;
-  mimeType: string;
-  productHint?: string;
+export async function generateBasicFromTextWithGemini(input: {
+  productName: string;
+  category?: string;
+  wordLimit?: number;
 }): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is missing for paid plan generation");
+    throw new Error("GEMINI_API_KEY is missing for generation");
   }
 
-  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-  const prompt = `You are writing ecommerce copy from a product image.
-${input.productHint ? `Hint: ${input.productHint}` : ""}
+  const modelName = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
+  const wordLimit = input.wordLimit ?? 120;
+  const prompt = `Write a high-converting ecommerce product description.
+Product name: ${input.productName}
+Category: ${input.category ?? "General"}
+Maximum words: ${wordLimit}
+
 Return plain text only with:
 1) A short headline
 2) A persuasive paragraph
 3) 3 bullet benefits
-4) A short CTA`;
+4) A short CTA
+
+Hard rule: keep the entire output under ${wordLimit} words.`;
+
+  const client = new GoogleGenerativeAI(apiKey);
+  const model = client.getGenerativeModel({ model: modelName });
+  const response = await model.generateContent(prompt);
+  const output = response.response.text().trim();
+
+  if (!output) {
+    throw new Error("Gemini returned an empty response");
+  }
+
+  return output;
+}
+
+export async function generateFromImage(input: {
+  base64: string;
+  mimeType: string;
+  productHint?: string;
+  wordLimit?: number;
+}): Promise<string> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is missing for generation");
+  }
+
+  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+  const wordLimit = input.wordLimit ?? 120;
+  const prompt = `You are writing ecommerce copy from a product image.
+${input.productHint ? `Hint: ${input.productHint}` : ""}
+Maximum words: ${wordLimit}
+Return plain text only with:
+1) A short headline
+2) A persuasive paragraph
+3) 3 bullet benefits
+4) A short CTA
+
+Hard rule: keep the entire output under ${wordLimit} words.`;
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -223,6 +272,50 @@ Return plain text only with:
   }
 
   return payload.output_text.trim();
+}
+
+export async function generateBasicFromImageWithGemini(input: {
+  base64: string;
+  mimeType: string;
+  productHint?: string;
+  wordLimit?: number;
+}): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is missing for generation");
+  }
+
+  const modelName = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
+  const wordLimit = input.wordLimit ?? 120;
+  const prompt = `You are writing ecommerce copy from a product image.
+${input.productHint ? `Hint: ${input.productHint}` : ""}
+Maximum words: ${wordLimit}
+Return plain text only with:
+1) A short headline
+2) A persuasive paragraph
+3) 3 bullet benefits
+4) A short CTA
+
+Hard rule: keep the entire output under ${wordLimit} words.`;
+
+  const client = new GoogleGenerativeAI(apiKey);
+  const model = client.getGenerativeModel({ model: modelName });
+  const response = await model.generateContent([
+    prompt,
+    {
+      inlineData: {
+        mimeType: input.mimeType,
+        data: input.base64,
+      },
+    },
+  ]);
+  const output = response.response.text().trim();
+
+  if (!output) {
+    throw new Error("Gemini returned an empty response");
+  }
+
+  return output;
 }
 
 export async function generateMockFromText(input: {
