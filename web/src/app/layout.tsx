@@ -68,10 +68,20 @@ export default function RootLayout({
       try {
         const storageKey = "describeflow:theme";
         const storedTheme = window.localStorage.getItem(storageKey);
-        const theme = storedTheme === "dark" ? "dark" : "light";
-        document.documentElement.classList.toggle("dark", theme === "dark");
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const theme =
+          storedTheme === "light" || storedTheme === "dark"
+            ? storedTheme
+            : (prefersDark ? "dark" : "light");
+        const root = document.documentElement;
+        root.classList.toggle("dark", theme === "dark");
+        root.style.colorScheme = theme;
+        root.style.backgroundColor = theme === "dark" ? "#07112b" : "#f7f7ff";
       } catch {
-        document.documentElement.classList.remove("dark");
+        const root = document.documentElement;
+        root.classList.add("dark");
+        root.style.colorScheme = "dark";
+        root.style.backgroundColor = "#07112b";
       }
     })();
   `;
