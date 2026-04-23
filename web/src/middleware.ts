@@ -2,16 +2,20 @@ import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { checkSubscription } from "@/lib/subscriptionService";
 
-const protectedPrefixes = ["/dashboard", "/generate", "/history", "/settings"];
+const authProtectedPrefixes = ["/dashboard", "/generate", "/history", "/settings"];
+const subscriptionProtectedPrefixes = ["/generate", "/history"];
 
 export async function middleware(request: NextRequest) {
   const { supabaseResponse, user, supabase } = await updateSession(request);
   const path = request.nextUrl.pathname;
   const switchMode = request.nextUrl.searchParams.get("switch") === "1";
 
-  const isProtected = protectedPrefixes.some((p) => path === p || path.startsWith(`${p}/`));
+  const isAuthProtected = authProtectedPrefixes.some((p) => path === p || path.startsWith(`${p}/`));
+  const isSubscriptionProtected = subscriptionProtectedPrefixes.some(
+    (p) => path === p || path.startsWith(`${p}/`),
+  );
 
-  if (isProtected && !user) {
+  if (isAuthProtected && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);
@@ -24,7 +28,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (isProtected && user) {
+  if (isSubscriptionProtected && user) {
     const subscription = await checkSubscription(supabase, user.id);
     if (!subscription.allowed) {
       const url = request.nextUrl.clone();

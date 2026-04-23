@@ -85,7 +85,7 @@ export default function HomePage() {
   const dashboardDriftY = useTransform(scrollYProgress, [0, 0.45], [0, -18]);
 
   return (
-    <div className="relative overflow-hidden pb-20">
+    <div className="relative overflow-hidden pb-0">
       <motion.div
         aria-hidden
         className="pointer-events-none absolute -left-24 top-20 -z-10 h-[20rem] w-[30rem] rounded-[28%] bg-gradient-to-br from-violet-500/60 via-fuchsia-500/40 to-cyan-400/45 blur-3xl dark:from-violet-500/48 dark:via-fuchsia-500/40 dark:to-cyan-400/48"
@@ -385,7 +385,7 @@ export default function HomePage() {
                   Create account <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Link href="/login" className="w-full sm:w-auto">
+              <Link href="/dashboard" className="w-full sm:w-auto">
                 <Button variant="outline" className="w-full sm:w-auto">
                   Open dashboard
                 </Button>
@@ -394,31 +394,49 @@ export default function HomePage() {
           </motion.div>
         </section>
       </main>
-      <footer className="mx-auto w-full max-w-6xl px-6 pb-10">
-        <div className="glass flex flex-col gap-4 rounded-2xl px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm text-muted">
-            <span className="font-medium text-foreground">Describeflow</span> - AI product
-            description SaaS
-          </div>
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <Link href="/privacy-policy" className="text-muted transition hover:text-foreground">
+      <footer className="mx-auto w-full max-w-6xl px-3 pb-0 sm:px-6">
+        <div className="glass relative overflow-hidden rounded-2xl border border-violet-500/25 px-4 py-4 shadow-[0_16px_44px_rgba(65,42,154,0.14)] sm:px-6 sm:py-5 dark:border-violet-400/35 dark:shadow-[0_18px_52px_rgba(16,24,64,0.55)]">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_120%_at_0%_100%,color-mix(in_srgb,var(--accent)_12%,transparent),transparent_45%),radial-gradient(120%_120%_at_100%_0%,color-mix(in_srgb,var(--accent-2)_10%,transparent),transparent_40%)]"
+          />
+          <div className="relative flex flex-col gap-4 sm:gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="text-center text-sm text-muted sm:text-left">
+              <span className="font-semibold text-foreground">Describeflow</span> - AI product
+              description SaaS
+            </div>
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-4 sm:gap-y-2 md:justify-end">
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm sm:justify-start">
+            <Link
+              href="/privacy-policy"
+              className="group relative text-muted transition-all duration-300 hover:-translate-y-0.5 hover:text-foreground dark:hover:text-violet-100"
+            >
               Privacy Policy
+              <span className="pointer-events-none absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-gradient-to-r from-violet-500 to-cyan-400 transition-transform duration-300 group-hover:scale-x-100" />
             </Link>
             <Link
               href="/terms-and-conditions"
-              className="text-muted transition hover:text-foreground"
+              className="group relative text-muted transition-all duration-300 hover:-translate-y-0.5 hover:text-foreground dark:hover:text-violet-100"
             >
               Terms & Conditions
-            </Link>
-            <Link href="/service-policy" className="text-muted transition hover:text-foreground">
-              Service Policy
+              <span className="pointer-events-none absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-gradient-to-r from-violet-500 to-cyan-400 transition-transform duration-300 group-hover:scale-x-100" />
             </Link>
             <Link
-              href="/contact"
-              className="inline-flex items-center rounded-xl border border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-card px-3 py-1.5 text-foreground transition hover:bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]"
+              href="/service-policy"
+              className="group relative text-muted transition-all duration-300 hover:-translate-y-0.5 hover:text-foreground dark:hover:text-violet-100"
             >
-              Contact
+              Service Policy
+              <span className="pointer-events-none absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 bg-gradient-to-r from-violet-500 to-cyan-400 transition-transform duration-300 group-hover:scale-x-100" />
             </Link>
+              </div>
+              <Link
+                href="/contact"
+                className="group inline-flex w-auto self-center items-center justify-center gap-1.5 rounded-xl border border-violet-500/40 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-500 px-3 py-1.5 text-xs font-semibold text-white shadow-[0_14px_30px_rgba(100,77,240,0.34)] transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.02] hover:shadow-[0_18px_34px_rgba(100,77,240,0.44)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/60 sm:w-auto sm:gap-2 sm:px-4 sm:py-2 sm:text-sm dark:border-violet-300/50 dark:shadow-[0_16px_36px_rgba(57,112,255,0.42)] dark:hover:shadow-[0_20px_40px_rgba(57,112,255,0.52)]"
+              >
+                <span>Contact us</span>
+                <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5 sm:h-4 sm:w-4" />
+              </Link>
+            </div>
           </div>
         </div>
       </footer>
