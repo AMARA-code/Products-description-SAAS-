@@ -1,17 +1,5 @@
 import { PLANS } from "@/lib/plans";
-
-type SupabaseLike = {
-  from: (table: string) => {
-    select: (columns: string) => {
-      eq: (column: string, value: string) => {
-        maybeSingle: () => Promise<{ data: ProfileRecord | null; error: { message: string } | null }>;
-      };
-    };
-    update: (values: Record<string, unknown>) => {
-      eq: (column: string, value: string) => Promise<{ error: { message: string } | null }>;
-    };
-  };
-};
+import { SupabaseClient } from "@supabase/supabase-js";
 
 export type SubscriptionPlanType = "basic" | "pro" | "enterprise";
 
@@ -63,7 +51,7 @@ function parseDate(value: string | null | undefined): Date | null {
 }
 
 export async function ensureSubscriptionNotExpired(
-  supabase: SupabaseLike,
+  supabase: SupabaseClient,
   userId: string,
 ): Promise<ProfileRecord | null> {
   const { data, error } = await supabase
@@ -99,7 +87,7 @@ export async function ensureSubscriptionNotExpired(
 }
 
 export async function checkSubscription(
-  supabase: SupabaseLike,
+  supabase: SupabaseClient,
   userId: string,
 ): Promise<{
   allowed: boolean;
@@ -119,4 +107,3 @@ export async function checkSubscription(
 
   return { allowed: true, profile };
 }
-
