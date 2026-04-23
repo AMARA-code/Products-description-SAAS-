@@ -66,7 +66,9 @@ export async function ensureSubscriptionNotExpired(
 
   const subscriptionEnd = parseDate(data.subscription_end ?? data.expiry_date);
   const now = new Date();
-  const isExpired = subscriptionEnd ? subscriptionEnd <= now : true;
+
+  // ✅ Fixed: missing end date means NOT expired (new user)
+  const isExpired = subscriptionEnd ? subscriptionEnd <= now : false;
   const isActive = data.subscription_status === "active";
 
   if (isActive && isExpired) {
@@ -95,13 +97,26 @@ export async function checkSubscription(
   profile: ProfileRecord | null;
 }> {
   const profile = await ensureSubscriptionNotExpired(supabase, userId);
-  if (!profile) return { allowed: false, reason: "profile_not_found", profile: null };
 
-  const isActive = profile.subscription_status === "active";
+  // ✅ No profile row yet = brand new user, allow through
+  if (!profile) return { allowed: true, profile: null };
+
+  const status = profile.subscription_status;
+
+  // ✅ Null status or trialing = new user, allow through to dashboard
+  if (!status || status === "trialing") {
+    return { allowed: true, profile };
+  }
+
+  const isActive = status === "active";
   if (!isActive) return { allowed: false, reason: "inactive", profile };
 
   const end = parseDate(profile.subscription_end ?? profile.expiry_date);
-  if (!end || end <= new Date()) {
+
+  // ✅ Active subscription with no end date = valid (just created)
+  if (!end) return { allowed: true, profile };
+
+  if (end <= new Date()) {
     return { allowed: false, reason: "expired", profile };
   }
 
