@@ -3,50 +3,39 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TypingText } from "@/components/ui/typing-text";
-import { cn } from "@/lib/utils";
-import { AnimatePresence, motion } from "framer-motion";
-import { Copy, ImageIcon, Loader2, Type, Wand2 } from "lucide-react";
+import { Copy, Loader2, Wand2 } from "lucide-react";
+import { motion } from "framer-motion";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-type Mode = "text" | "image";
 type Usage = {
   used: number;
   limit: number;
   remaining: number;
   plan: string;
   planType?: string;
+  planStartedAt?: string | null;
 };
 
-const BASIC_FALLBACK_MESSAGE = "Unable to generate description at the moment";
-
 export default function GeneratePage() {
-  const [mode, setMode] = useState<Mode>("text");
   const [productName, setProductName] = useState("");
   const [category, setCategory] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [wordLimit, setWordLimit] = useState("120");
-  const [preview, setPreview] = useState<string | null>(null);
-  const [mimeType, setMimeType] = useState<string | null>(null);
+  const [features, setFeatures] = useState("");
+  const [wordLimit, setWordLimit] = useState("180");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [limitHit, setLimitHit] = useState(false);
   const [copying, setCopying] = useState(false);
   const [usage, setUsage] = useState<Usage | null>(null);
+
   const usagePct = useMemo(() => {
     const limit = usage?.limit ?? 0;
     if (limit <= 0) return 0;
     return Math.min(100, Math.round(((usage?.used ?? 0) / limit) * 100));
   }, [usage]);
-  const isBasicPlan =
-    (usage?.planType ?? "").toLowerCase() === "basic" ||
-    (usage?.plan ?? "").toUpperCase() === "BASIC";
 
-  const canSubmit = useMemo(() => {
-    if (mode === "text") return productName.trim().length > 0;
-    return !!file && !!preview;
-  }, [mode, productName, file, preview]);
+  const canSubmit = productName.trim().length > 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -65,25 +54,9 @@ export default function GeneratePage() {
     };
   }, []);
 
-  const onFile = useCallback((f: File | null) => {
-    setFile(f);
-    setPreview(null);
-    setMimeType(f?.type ?? null);
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") setPreview(reader.result);
-    };
-    reader.readAsDataURL(f);
-  }, []);
-
   const submit = async () => {
     if (!canSubmit) {
-      toast.error(
-        mode === "text"
-          ? "Enter a product name."
-          : "Add a product image.",
-      );
+      toast.error("Enter a product name.");
       return;
     }
     setLoading(true);
@@ -95,32 +68,17 @@ export default function GeneratePage() {
         toast.error("Enter a valid word limit.");
         return;
       }
-      let body: Record<string, unknown>;
-      if (mode === "text") {
-        body = {
-          mode: "text",
-          productName: productName.trim(),
-          category: category.trim() || undefined,
-          wordLimit: parsedWordLimit,
-        };
-      } else {
-        const dataUrl = preview!;
-        const comma = dataUrl.indexOf(",");
-        const base64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
-        body = {
-          mode: "image",
-          imageBase64: base64,
-          mimeType: mimeType ?? "image/jpeg",
-          productName: productName.trim() || undefined,
-          category: category.trim() || undefined,
-          wordLimit: parsedWordLimit,
-        };
-      }
 
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          mode: "text",
+          productName: productName.trim(),
+          category: category.trim() || undefined,
+          features: features.trim() || undefined,
+          wordLimit: parsedWordLimit,
+        }),
       });
 
       const payload = await res.json();
@@ -136,10 +94,8 @@ export default function GeneratePage() {
       if (!res.ok) {
         throw new Error(payload.error ?? "Request failed");
       }
+
       const description = String(payload.description ?? "");
-      if (description === BASIC_FALLBACK_MESSAGE) {
-        throw new Error(BASIC_FALLBACK_MESSAGE);
-      }
       setResult(description);
       if (payload?.usage?.used !== undefined && payload?.usage?.limit !== undefined) {
         const used = Number(payload.usage.used);
@@ -149,9 +105,11 @@ export default function GeneratePage() {
           limit,
           remaining: Math.max(0, limit - used),
           plan: usage?.plan ?? "",
+          planType: usage?.planType,
+          planStartedAt: usage?.planStartedAt ?? null,
         });
       }
-      toast.success("Description generated");
+      toast.success("SEO description generated");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -167,17 +125,18 @@ export default function GeneratePage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-3xl font-semibold tracking-tight"
         >
-          Generate
+          Generate SEO Description
         </motion.h1>
         <p className="mt-2 max-w-2xl text-sm text-muted">
-          Use a crisp product photo or structured fields. At least one path is required before
-          generation.
+          Enter product details to generate an SEO-friendly description, meta title, meta
+          description, and keyword list.
         </p>
         <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-violet-400/25 bg-white/60 px-3 py-1 text-xs text-muted dark:bg-[#121938]">
           <span className="font-medium text-foreground">
             Usage: {usage?.used ?? 0}/{usage?.limit ?? 0}
           </span>
           <span>Remaining: {usage?.remaining ?? 0}</span>
+          {usage?.planStartedAt && <span>Cycle start: {usage.planStartedAt.slice(0, 10)}</span>}
         </div>
         <div className="mt-3 h-2 w-full max-w-md overflow-hidden rounded-full bg-white/20 dark:bg-[#111733]">
           <motion.div
@@ -189,218 +148,101 @@ export default function GeneratePage() {
         </div>
       </div>
 
-      <div className="glass rounded-2xl p-1 shadow-card sm:p-2 dark:bg-[#101633]">
-        <div className="grid grid-cols-2 gap-1 rounded-xl bg-black/30 p-1 dark:bg-[#0c1025]">
-          <button
-            type="button"
-            onClick={() => setMode("text")}
-            className={cn(
-              "relative flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition",
-              mode === "text"
-                ? "text-white"
-                : "text-muted hover:text-foreground",
-            )}
-          >
-            {mode === "text" && (
-              <motion.div
-                layoutId="mode"
-                className="absolute inset-0 rounded-lg bg-white/[0.08]"
-                transition={{ type: "spring", stiffness: 380, damping: 30 }}
-              />
-            )}
-            <Type className="relative h-4 w-4" />
-            <span className="relative">Name + category</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (isBasicPlan) {
-                toast.error("Image-based generation is available on Pro and above.");
-                return;
-              }
-              setMode("image");
-            }}
-            className={cn(
-              "relative flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition",
-              mode === "image"
-                ? "text-white"
-                : "text-muted hover:text-foreground",
-              isBasicPlan && "cursor-not-allowed opacity-60 hover:text-muted",
-            )}
-            aria-disabled={isBasicPlan}
-          >
-            {mode === "image" && (
-              <motion.div
-                layoutId="mode"
-                className="absolute inset-0 rounded-lg bg-white/[0.08]"
-                transition={{ type: "spring", stiffness: 380, damping: 30 }}
-              />
-            )}
-            <ImageIcon className="relative h-4 w-4" />
-            <span className="relative">Image upload</span>
-          </button>
+      <div className="glass rounded-2xl p-6 shadow-card">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="space-y-2 text-sm">
+            <span className="text-muted">Product name</span>
+            <input
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              placeholder="e.g. iPhone 15 Pro case"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-[var(--ring)]"
+            />
+          </label>
+          <label className="space-y-2 text-sm">
+            <span className="text-muted">Category / type</span>
+            <input
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              placeholder="e.g. Phone accessories"
+              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-[var(--ring)]"
+            />
+          </label>
         </div>
 
-        <div className="mt-6 space-y-5 p-4 sm:p-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="space-y-2 text-sm">
-              <span className="text-muted">Description word limit</span>
-              <input
-                type="number"
-                min={30}
-                max={500}
-                step={1}
-                value={wordLimit}
-                onChange={(e) => setWordLimit(e.target.value)}
-                placeholder="e.g. 120"
-                className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-[var(--ring)]"
-              />
-            </label>
-          </div>
-          <AnimatePresence mode="wait">
-            {mode === "text" ? (
-              <motion.div
-                key="text"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                className="grid gap-4 sm:grid-cols-2"
-              >
-                <label className="space-y-2 text-sm">
-                  <span className="text-muted">Product name</span>
-                  <input
-                    value={productName}
-                    onChange={(e) => setProductName(e.target.value)}
-                    placeholder="e.g. Aurora Trail Shell"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none ring-0 transition focus:border-indigo-400/60 focus:ring-2 focus:ring-[var(--ring)]"
-                  />
-                </label>
-                <label className="space-y-2 text-sm">
-                  <span className="text-muted">Category / type</span>
-                  <input
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    placeholder="e.g. Waterproof jacket"
-                    className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-[var(--ring)]"
-                  />
-                </label>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="image"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                className="grid gap-6 lg:grid-cols-2"
-              >
-                <label className="group relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-gradient-to-b from-white/[0.04] to-transparent px-6 py-10 text-center transition hover:border-indigo-400/40 dark:border-violet-300/20 dark:from-[#131a3b] dark:to-[#0e132c]">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="absolute inset-0 cursor-pointer opacity-0"
-                    onChange={(e) => onFile(e.target.files?.[0] ?? null)}
-                  />
-                  <div className="mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/[0.06] transition group-hover:scale-105 dark:bg-[#1a234c]">
-                    <ImageIcon className="h-6 w-6 text-indigo-200" />
-                  </div>
-                  <div className="text-sm font-medium">Drop an image or click to upload</div>
-                  <div className="mt-1 text-xs text-muted">PNG, JPG, WEBP up to ~20MB</div>
-                </label>
-                <div className="space-y-4">
-                  <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30 dark:bg-[#0b1024]">
-                    {preview ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={preview}
-                        alt="Preview"
-                        className="max-h-72 w-full object-contain"
-                      />
-                    ) : (
-                      <div className="grid h-64 place-items-center text-xs text-muted">
-                        Preview will appear here
-                      </div>
-                    )}
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="space-y-2 text-xs">
-                      <span className="text-muted">Optional product name</span>
-                      <input
-                        value={productName}
-                        onChange={(e) => setProductName(e.target.value)}
-                        placeholder="e.g. Summit backpack"
-                        className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--ring)]"
-                      />
-                    </label>
-                    <label className="space-y-2 text-xs">
-                      <span className="text-muted">Optional category</span>
-                      <input
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                        placeholder="e.g. Travel gear"
-                        className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--ring)]"
-                      />
-                    </label>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <label className="mt-4 block space-y-2 text-sm">
+          <span className="text-muted">Product features (optional)</span>
+          <textarea
+            value={features}
+            onChange={(e) => setFeatures(e.target.value)}
+            placeholder="e.g. MagSafe compatible, shockproof edges, anti-yellow TPU, camera lip protection"
+            rows={4}
+            className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-[var(--ring)]"
+          />
+        </label>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-xs text-muted">
-              {mode === "text"
-                ? "Requires product name. Category sharpens tone and keywords."
-                : "Requires image. Name/category are optional hints."}
-            </div>
-            <Button
-              type="button"
-              onClick={submit}
-              disabled={loading || !canSubmit}
-              className="gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating…
-                </>
-              ) : (
-                <>
-                  <Wand2 className="h-4 w-4" />
-                  Generate description
-                </>
-              )}
-            </Button>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="space-y-2 text-sm">
+            <span className="text-muted">Word limit</span>
+            <input
+              type="number"
+              min={60}
+              max={400}
+              step={1}
+              value={wordLimit}
+              onChange={(e) => setWordLimit(e.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm outline-none transition focus:border-indigo-400/60 focus:ring-2 focus:ring-[var(--ring)]"
+            />
+          </label>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-xs text-muted">
+            Features are optional. Add them only when you want more targeted SEO copy.
           </div>
+          <Button
+            type="button"
+            onClick={submit}
+            disabled={loading || !canSubmit}
+            className="gap-2"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generating…
+              </>
+            ) : (
+              <>
+                <Wand2 className="h-4 w-4" />
+                Generate SEO description
+              </>
+            )}
+          </Button>
         </div>
       </div>
 
-      <AnimatePresence>
-        {limitHit && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            className="glass rounded-2xl border border-amber-500/25 bg-amber-500/10 p-5"
-          >
-            <div className="text-sm font-medium text-amber-100">
-              You have reached your monthly limit.
-            </div>
-            <p className="mt-1 text-sm text-amber-100/80">
-              Upgrade your workspace to keep generating descriptions without interruption.
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link href="/pricing">
-                <Button size="sm">View plans</Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button variant="outline" size="sm">
-                  Back to dashboard
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {limitHit && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass rounded-2xl border border-amber-500/25 bg-amber-500/10 p-5"
+        >
+          <div className="text-sm font-medium text-amber-100">You have reached your monthly limit.</div>
+          <p className="mt-1 text-sm text-amber-100/80">
+            Upgrade your workspace to keep generating descriptions without interruption.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link href="/pricing">
+              <Button size="sm">View plans</Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button variant="outline" size="sm">
+                Back to dashboard
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      )}
 
       <div className="glass rounded-2xl p-6 shadow-card">
         <div className="flex items-center justify-between gap-3">
@@ -440,7 +282,7 @@ export default function GeneratePage() {
           {!loading && result && <TypingText text={result} />}
           {!loading && !result && (
             <p className="text-sm text-muted">
-              Your generated description will stream here with a lightweight typing effect.
+              Your SEO-ready product content will appear here.
             </p>
           )}
         </div>

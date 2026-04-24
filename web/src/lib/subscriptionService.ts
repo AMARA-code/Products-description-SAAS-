@@ -13,6 +13,7 @@ export type ProfileRecord = {
   expiry_date?: string | null;
   ai_requests_used?: number | null;
   ai_requests_limit?: number | null;
+  created_at?: string | null;
 };
 
 const PLAN_LIMITS: Record<SubscriptionPlanType, number> = {
@@ -48,6 +49,68 @@ function parseDate(value: string | null | undefined): Date | null {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function addMonths(date: Date, months: number): Date {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + months);
+  return next;
+}
+
+function computeCurrentCycleStart(anchor: Date, now: Date): Date {
+  let cycleStart = new Date(anchor);
+  while (addMonths(cycleStart, 1) <= now) {
+    cycleStart = addMonths(cycleStart, 1);
+  }
+  return cycleStart;
+}
+
+export async function ensureUsageCycleWindow(
+  supabase: SupabaseClient,
+  userId: string,
+  profile: ProfileRecord,
+): Promise<ProfileRecord> {
+  const now = new Date();
+  const anchor =
+    parseDate(profile.subscription_start) ??
+    parseDate(profile.created_at) ??
+    now;
+  const cycleStart = computeCurrentCycleStart(anchor, now);
+
+  const shouldInitializeStart = !parseDate(profile.subscription_start);
+  const cycleAdvanced = cycleStart.getTime() !== anchor.getTime();
+  const shouldResetUsage = cycleAdvanced && (profile.ai_requests_used ?? 0) > 0;
+
+  if (!shouldInitializeStart && !shouldResetUsage) {
+    return profile;
+  }
+
+  const updatePayload: Record<string, unknown> = {};
+  if (shouldInitializeStart || cycleAdvanced) {
+    updatePayload.subscription_start = cycleStart.toISOString();
+  }
+  if (shouldResetUsage) {
+    updatePayload.ai_requests_used = 0;
+  }
+
+  const { data: updated } = await supabase
+    .from("profiles")
+    .update(updatePayload)
+    .eq("id", userId)
+    .select(
+      "id, plan, plan_type, subscription_status, subscription_start, subscription_end, expiry_date, ai_requests_used, ai_requests_limit, created_at",
+    )
+    .maybeSingle();
+
+  return (updated as ProfileRecord | null) ?? {
+    ...profile,
+    subscription_start:
+      (updatePayload.subscription_start as string | undefined) ??
+      profile.subscription_start,
+    ai_requests_used:
+      (updatePayload.ai_requests_used as number | undefined) ??
+      profile.ai_requests_used,
+  };
 }
 
 export async function ensureSubscriptionNotExpired(

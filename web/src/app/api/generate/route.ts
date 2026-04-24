@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { createSupabaseForApiRoute } from "@/lib/supabase/api-route";
 import {
-  generateBasicFromImageWithGemini,
   generateBasicFromTextWithGemini,
-  generateFromImage,
   generateFromText,
 } from "@/lib/openai-generate";
 import {
   checkSubscription,
+  ensureUsageCycleWindow,
   normalizePlanType,
   planLimitFor,
 } from "@/lib/subscriptionService";
@@ -16,11 +15,10 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 type Body = {
-  mode: "text" | "image";
+  mode?: "text" | "image";
   productName?: string;
   category?: string;
-  imageBase64?: string;
-  mimeType?: string;
+  features?: string;
   wordLimit?: number;
 };
 
@@ -42,25 +40,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const mode = body.mode;
-  if (mode !== "text" && mode !== "image") {
-    return NextResponse.json({ error: "mode must be text or image" }, { status: 400 });
-  }
-
-  if (mode === "text") {
-    if (!body.productName?.trim()) {
-      return NextResponse.json(
-        { error: "Product name is required for text mode" },
-        { status: 400 },
-      );
-    }
-  } else {
-    if (!body.imageBase64?.trim() || !body.mimeType?.trim()) {
-      return NextResponse.json(
-        { error: "Image and mime type are required for image mode" },
-        { status: 400 },
-      );
-    }
+  if (!body.productName?.trim()) {
+    return NextResponse.json(
+      { error: "Product name is required" },
+      { status: 400 },
+    );
   }
 
   const requestedWordLimit = Number(body.wordLimit ?? 120);
@@ -71,7 +55,7 @@ export async function POST(request: Request) {
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("plan, plan_type, subscription_status, subscription_end, ai_requests_used, ai_requests_limit, expiry_date")
+    .select("plan, plan_type, subscription_status, subscription_start, subscription_end, ai_requests_used, ai_requests_limit, expiry_date, created_at")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -80,13 +64,6 @@ export async function POST(request: Request) {
   }
 
   const planType = normalizePlanType(profile.plan_type ?? profile.plan?.toLowerCase());
-  if (planType === "basic" && mode === "image") {
-    return NextResponse.json(
-      { error: "Image-based generation is available on Pro and above." },
-      { status: 403 },
-    );
-  }
-
   const subscription = await checkSubscription(supabase, user.id);
   // Basic/free users should be able to generate without paid subscription.
   if (planType !== "basic" && !subscription.allowed) {
@@ -99,9 +76,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const used = profile.ai_requests_used ?? 0;
+  const profileWithCycle = await ensureUsageCycleWindow(supabase, user.id, profile);
+  const used = profileWithCycle.ai_requests_used ?? 0;
   const planLimit = planLimitFor(planType);
-  const limit = planType === "basic" ? planLimit : (profile.ai_requests_limit ?? planLimit);
+  const limit =
+    planType === "basic" ? planLimit : (profileWithCycle.ai_requests_limit ?? planLimit);
   if (used >= limit) {
     return NextResponse.json(
       {
@@ -116,48 +95,24 @@ export async function POST(request: Request) {
 
   let description: string;
   try {
-    if (mode === "text") {
-      if (planType === "basic") {
-        description = await generateBasicFromTextWithGemini({
-          productName: body.productName!.trim(),
-          category: body.category?.trim(),
-          wordLimit,
-        });
-      } else {
-        description = await generateFromText({
-          productName: body.productName!.trim(),
-          category: body.category?.trim(),
-          wordLimit,
-        });
-      }
+    if (planType === "basic") {
+      description = await generateBasicFromTextWithGemini({
+        productName: body.productName!.trim(),
+        category: body.category?.trim(),
+        features: body.features?.trim(),
+        wordLimit,
+      });
     } else {
-      if (planType === "basic") {
-        description = await generateBasicFromImageWithGemini({
-          base64: body.imageBase64!,
-          mimeType: body.mimeType!,
-          productHint: body.productName?.trim() || body.category?.trim(),
-          wordLimit,
-        });
-      } else {
-        description = await generateFromImage({
-          base64: body.imageBase64!,
-          mimeType: body.mimeType!,
-          productHint: body.productName?.trim() || body.category?.trim(),
-          wordLimit,
-        });
-      }
+      description = await generateFromText({
+        productName: body.productName!.trim(),
+        category: body.category?.trim(),
+        features: body.features?.trim(),
+        wordLimit,
+      });
     }
   } catch (e) {
-    if (planType === "basic") {
-      console.error("[basic-gemini-generation-failed]", e);
-      return NextResponse.json(
-        { error: "Unable to generate description at the moment" },
-        { status: 502 },
-      );
-    } else {
-      const message = e instanceof Error ? e.message : "Generation failed";
-      return NextResponse.json({ error: message }, { status: 500 });
-    }
+    const message = e instanceof Error ? e.message : "Generation failed";
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 
   if (!description.trim()) {
@@ -167,20 +122,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const title =
-    mode === "text"
-      ? body.productName!.trim()
-      : body.productName?.trim() || "Image product";
+  const title = body.productName!.trim();
 
   const { data: inserted, error: insertError } = await supabase
     .from("generations")
     .insert({
       user_id: user.id,
       title,
-      source_type: mode === "text" ? "text" : "image",
+      source_type: "text",
       product_name: body.productName?.trim() ?? null,
       category: body.category?.trim() ?? null,
-      image_url: mode === "image" ? "inline" : null,
+      image_url: null,
       description,
     })
     .select("id")
