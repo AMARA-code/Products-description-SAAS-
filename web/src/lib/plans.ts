@@ -27,10 +27,10 @@ export const PLANS: Record<
   pro: {
     name: "Pro",
     description: "For growth teams that need higher limits and full access.",
-    monthlyLimit: 2000,
-    priceUsd: 20,
+    monthlyLimit: 500,
+    priceUsd: 10,
     features: [
-      "2,000 AI requests / month",
+      "500 AI requests / month",
       "Full feature access",
       "Priority support",
       "Faster billing support",
@@ -40,10 +40,10 @@ export const PLANS: Record<
   agency: {
     name: "Agency",
     description: "For agencies and multi-user teams managing clients at scale.",
-    monthlyLimit: 10000,
-    priceUsd: 39,
+    monthlyLimit: 1000000000,
+    priceUsd: 40,
     features: [
-      "Highest AI request limits",
+      "Unlimited AI requests",
       "Team and multi-user support",
       "Full platform access",
       "Priority agency support",

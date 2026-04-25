@@ -16,8 +16,9 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      // Always use the currently open origin to avoid broken localhost links.
-      const redirectTo = `${window.location.origin}/reset-password`;
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+      const baseUrl = appUrl && appUrl.length > 0 ? appUrl : window.location.origin;
+      const redirectTo = `${baseUrl.replace(/\/$/, "")}/reset-password?email=${encodeURIComponent(normalizedEmail)}`;
 
       const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo,

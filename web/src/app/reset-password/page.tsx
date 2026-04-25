@@ -17,15 +17,75 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    // If the user arrived via recovery link, supabase-js will parse tokens in the URL
-    // and establish a session for `updateUser`.
     let cancelled = false;
+
     (async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        if (!cancelled) setReady(Boolean(data.session));
+        // Prevent using a stale signed-in session from another account.
+        await supabase.auth.signOut({ scope: "local" });
+
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get("code");
+        const tokenHash = params.get("token_hash");
+        const otpType = params.get("type");
+        const expectedEmail = params.get("email")?.trim().toLowerCase() ?? null;
+        if (code) {
+          const { error: codeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (codeError) {
+            if (!cancelled) toast.error(codeError.message);
+            if (!cancelled) setReady(false);
+            return;
+          }
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+
+        if (tokenHash && otpType === "recovery") {
+          const { error: otpError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: "recovery",
+          });
+          if (otpError) {
+            if (!cancelled) toast.error(otpError.message);
+            if (!cancelled) setReady(false);
+            return;
+          }
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+
+        // Explicitly hydrate recovery session from hash tokens when present.
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+        const type = hashParams.get("type");
+
+        if (accessToken && refreshToken && (!type || type === "recovery")) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (sessionError) {
+            if (!cancelled) toast.error(sessionError.message);
+            if (!cancelled) setReady(false);
+            return;
+          }
+
+          // Remove sensitive tokens from the URL after they are consumed.
+          window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+        }
+
+        const { data: userData } = await supabase.auth.getUser();
+        if (!cancelled) {
+          const recoveredEmail = userData.user?.email?.toLowerCase() ?? null;
+          const emailMatches = !expectedEmail || expectedEmail === recoveredEmail;
+          setReady(Boolean(userData.user) && emailMatches);
+          setRecoveryEmail(userData.user?.email ?? null);
+          if (userData.user && !emailMatches) {
+            toast.error("This reset link is for a different email. Request a new link.");
+          }
+        }
       } catch {
         if (!cancelled) setReady(false);
       }
@@ -43,6 +103,12 @@ export default function ResetPasswordPage() {
       toast.error(err);
       return;
     }
+
+    if (password !== password.trim() || confirm !== confirm.trim()) {
+      toast.error("Passwords cannot start or end with spaces.");
+      return;
+    }
+
     if (password !== confirm) {
       toast.error("Passwords do not match.");
       return;
@@ -50,13 +116,30 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData.user) {
+        toast.error("This reset link is invalid or expired. Request a new link.");
+        setReady(false);
+        return;
+      }
+      const expectedEmail = new URLSearchParams(window.location.search).get("email")?.trim().toLowerCase();
+      if (expectedEmail && authData.user.email?.toLowerCase() !== expectedEmail) {
+        toast.error("This reset link is for a different email. Request a new link.");
+        setReady(false);
+        return;
+      }
+
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
         toast.error(error.message);
         return;
       }
+      await supabase.auth.signOut({ scope: "local" });
       toast.success("Password updated. You can sign in now.");
-      window.location.href = "/login";
+      const next = authData.user.email
+        ? `/login?email=${encodeURIComponent(authData.user.email)}`
+        : "/login";
+      window.location.href = next;
     } catch (e2) {
       const message =
         e2 instanceof Error ? e2.message : "Unable to update password. Please try again.";
@@ -77,7 +160,10 @@ export default function ResetPasswordPage() {
       <div className="glass mx-auto w-full max-w-2xl rounded-2xl p-8 shadow-card sm:p-10">
         <div className="mb-6 space-y-1 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">Choose a new password</h1>
-          <p className="text-sm text-muted">Use a strong password you don’t reuse elsewhere.</p>
+          <p className="text-sm text-muted">
+            Use a strong password you don&apos;t reuse elsewhere.
+            {recoveryEmail ? ` Resetting for ${recoveryEmail}.` : ""}
+          </p>
         </div>
 
         {!ready ? (

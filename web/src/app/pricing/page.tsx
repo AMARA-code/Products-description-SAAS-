@@ -45,23 +45,8 @@ export default function PricingPage() {
     }
 
     setLoadingPlan(plan);
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        url?: string;
-      };
-      if (!res.ok) throw new Error(data.error ?? "Checkout failed");
-      if (data.url) window.location.href = data.url as string;
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Checkout failed");
-    } finally {
-      setLoadingPlan(null);
-    }
+    router.push(`/payment?plan=${encodeURIComponent(plan)}`);
+    setLoadingPlan(null);
   };
 
   return (

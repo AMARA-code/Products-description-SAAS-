@@ -81,7 +81,7 @@ export async function POST(request: Request) {
   const planLimit = planLimitFor(planType);
   const limit =
     planType === "basic" ? planLimit : (profileWithCycle.ai_requests_limit ?? planLimit);
-  if (used >= limit) {
+  if (planType !== "enterprise" && used >= limit) {
     return NextResponse.json(
       {
         error: "Monthly limit reached. Please upgrade your plan.",

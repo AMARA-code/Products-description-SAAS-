@@ -18,6 +18,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ADMIN_EMAIL } from "@/lib/adminAccess";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -33,6 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<{
     name: string;
   } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -61,6 +63,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       setProfile({
         name: fullName || "User",
       });
+      setIsAdmin((user.email ?? "").toLowerCase() === ADMIN_EMAIL);
     })();
     return () => {
       cancelled = true;
@@ -165,7 +168,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
 
                 <nav className="mt-6 flex flex-1 flex-col gap-2">
-                  {links.map((l) => {
+                  {[...links, ...(isAdmin ? [{ href: "/admin/payments", label: "Admin Payments", icon: CreditCard }] : [])].map((l) => {
                     const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
                     const Icon = l.icon;
                     return (

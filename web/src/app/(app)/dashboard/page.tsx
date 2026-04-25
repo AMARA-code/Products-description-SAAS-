@@ -5,7 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 type Usage = {
   month: string;
@@ -13,9 +14,13 @@ type Usage = {
   limit: number;
   remaining: number;
   plan: string;
+  planStartedAt?: string | null;
+  subscriptionAllowed?: boolean;
+  planType?: string;
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [usage, setUsage] = useState<Usage | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -26,6 +31,10 @@ export default function DashboardPage() {
         const res = await fetch("/api/usage");
         if (!res.ok) throw new Error("Failed to load usage");
         const data = (await res.json()) as Usage;
+        if (data.subscriptionAllowed === false && data.planType !== "basic") {
+          router.replace("/pricing");
+          return;
+        }
         if (!cancelled) setUsage(data);
       } catch {
         if (!cancelled) setUsage(null);
@@ -36,12 +45,30 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [router]);
 
   const pct =
     usage && usage.limit > 0
       ? Math.min(100, Math.round((usage.used / usage.limit) * 100))
       : 0;
+
+  const usageResetLabel = useMemo(() => {
+    if (!usage?.planStartedAt) return "Resets monthly based on your plan start date.";
+
+    const planStarted = new Date(usage.planStartedAt);
+    if (Number.isNaN(planStarted.getTime())) {
+      return "Resets monthly based on your plan start date.";
+    }
+
+    const nextReset = new Date(planStarted);
+    nextReset.setUTCMonth(nextReset.getUTCMonth() + 1);
+    return `Resets on ${nextReset.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    })} (UTC).`;
+  }, [usage?.planStartedAt]);
 
   return (
     <div className="relative mx-auto max-w-5xl space-y-8 overflow-hidden rounded-3xl border border-violet-400/20 bg-white/35 p-4 sm:p-6 sm:space-y-10 dark:border-violet-300/20 dark:bg-[#0f1d44]/70">
@@ -105,7 +132,7 @@ export default function DashboardPage() {
                 Monthly usage
               </div>
               <div className="mt-2 text-sm text-muted">
-                Resets on the 1st of each month (UTC).
+                {usageResetLabel}
               </div>
             </div>
             <div className="text-right">

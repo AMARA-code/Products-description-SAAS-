@@ -19,7 +19,7 @@ export type ProfileRecord = {
 const PLAN_LIMITS: Record<SubscriptionPlanType, number> = {
   basic: PLANS.basic.monthlyLimit,
   pro: PLANS.pro.monthlyLimit,
-  enterprise: Math.max(1000000, PLANS.agency.monthlyLimit),
+  enterprise: PLANS.agency.monthlyLimit,
 };
 
 export function toDbPlan(planType: SubscriptionPlanType): "BASIC" | "PRO" | "AGENCY" {
@@ -51,18 +51,8 @@ function parseDate(value: string | null | undefined): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function addMonths(date: Date, months: number): Date {
-  const next = new Date(date);
-  next.setMonth(next.getMonth() + months);
-  return next;
-}
-
-function computeCurrentCycleStart(anchor: Date, now: Date): Date {
-  let cycleStart = new Date(anchor);
-  while (addMonths(cycleStart, 1) <= now) {
-    cycleStart = addMonths(cycleStart, 1);
-  }
-  return cycleStart;
+function startOfUtcMonth(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1, 0, 0, 0, 0));
 }
 
 export async function ensureUsageCycleWindow(
@@ -71,14 +61,13 @@ export async function ensureUsageCycleWindow(
   profile: ProfileRecord,
 ): Promise<ProfileRecord> {
   const now = new Date();
-  const anchor =
-    parseDate(profile.subscription_start) ??
-    parseDate(profile.created_at) ??
-    now;
-  const cycleStart = computeCurrentCycleStart(anchor, now);
+  const lastReset = parseDate(profile.subscription_start) ?? parseDate(profile.created_at) ?? now;
+  const cycleStart = startOfUtcMonth(now);
+  const lastResetMonth = `${lastReset.getUTCFullYear()}-${lastReset.getUTCMonth()}`;
+  const currentMonth = `${now.getUTCFullYear()}-${now.getUTCMonth()}`;
 
   const shouldInitializeStart = !parseDate(profile.subscription_start);
-  const cycleAdvanced = cycleStart.getTime() !== anchor.getTime();
+  const cycleAdvanced = lastResetMonth !== currentMonth;
   const shouldResetUsage = cycleAdvanced && (profile.ai_requests_used ?? 0) > 0;
 
   if (!shouldInitializeStart && !shouldResetUsage) {

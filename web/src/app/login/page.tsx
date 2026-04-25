@@ -26,6 +26,10 @@ function LoginInner() {
     setLoading(true);
     try {
       const normalizedEmail = email.trim().toLowerCase();
+      if (password !== password.trim()) {
+        toast.error("Password cannot start or end with spaces.");
+        return;
+      }
       const { error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
@@ -33,7 +37,7 @@ function LoginInner() {
       if (error) {
         const normalized = error.message.toLowerCase();
         if (normalized.includes("invalid login credentials")) {
-          toast.error("Incorrect password.");
+          toast.error("Invalid email or password.");
         } else {
           toast.error(error.message);
         }

@@ -75,7 +75,7 @@ export async function POST(request: Request) {
         subscription_start: start.toISOString(),
         subscription_end: end.toISOString(),
         expiry_date: end.toISOString(),
-        ai_requests_limit: 60,
+        ai_requests_limit: 5,
         ai_requests_used: 0,
         updated_at: new Date().toISOString(),
       })

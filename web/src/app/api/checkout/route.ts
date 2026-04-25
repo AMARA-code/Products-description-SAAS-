@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createSupabaseForApiRoute } from "@/lib/supabase/api-route";
-import { buildPayFastCheckoutUrl } from "@/lib/payfast";
 import { isPaidPlan, type PlanSlug } from "@/lib/plans";
 
 export async function POST(request: Request) {
@@ -32,41 +31,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("email")
-    .eq("id", user.id)
-    .single();
-
-  const origin =
-    request.headers.get("origin") ??
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "http://localhost:3000";
-
-  const email = profile?.email ?? user.email;
-  if (!email) {
-    return NextResponse.json(
-      { error: "User email is required to start checkout" },
-      { status: 400 },
-    );
-  }
-
-  let url: string;
-  try {
-    url = buildPayFastCheckoutUrl({
-      plan,
-      userId: user.id,
-      email,
-      returnUrl: process.env.PAYFAST_RETURN_URL?.trim() || `${origin}/settings/billing`,
-      cancelUrl: process.env.PAYFAST_CANCEL_URL?.trim() || `${origin}/pricing`,
-      notifyUrl:
-        process.env.PAYFAST_NOTIFY_URL?.trim() || `${origin}/api/webhooks/payfast`,
-    });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unable to initialize PayFast checkout";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
-
-  return NextResponse.json({ url });
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim() || new URL(request.url).origin;
+  return NextResponse.json({ url: `${appUrl.replace(/\/$/, "")}/payment?plan=${plan}` });
 }

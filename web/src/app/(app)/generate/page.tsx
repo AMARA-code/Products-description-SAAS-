@@ -87,7 +87,7 @@ export default function GeneratePage() {
           toast.error("Active subscription required. Please subscribe to continue.");
         } else {
           setLimitHit(true);
-          toast.error("Monthly limit reached. Upgrade to continue.");
+          toast.error("Monthly limit reached. Please upgrade.");
         }
         return;
       }
